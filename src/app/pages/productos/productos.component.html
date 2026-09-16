@@ -1,0 +1,53 @@
+<div class="container">
+  <div class="msg" [class.ok]="mensaje.tipo==='ok'" [class.error]="mensaje.tipo==='error'" *ngIf="mensaje">{{ mensaje.texto }}</div>
+
+  <div class="card">
+    <div class="header-row">
+      <h2>📦 Productos ({{ productosFiltrados.length }})</h2>
+      <button type="button" class="btn btn-primary" (click)="abrirAlta()">+ Nuevo producto</button>
+    </div>
+
+    <input type="text" class="buscador-tabla" [(ngModel)]="filtro" placeholder="Buscar por nombre, rubro o tipo... (ej: 'Viga' muestra todas las medidas)">
+
+    <div class="loading" *ngIf="cargando">Cargando productos...</div>
+
+    <div class="table-responsive" *ngIf="!cargando">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Producto</th><th>Rubro</th><th>Tipo</th><th>Stock</th><th>Costo</th>
+            <th>Resp. Insc.</th><th>Cons. Final</th><th>Cta. Cte.</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of productosFiltrados">
+            <td>{{ p.nombre }}</td>
+            <td>{{ p.rubro || '—' }}</td>
+            <td>{{ p.tipo || '—' }}</td>
+            <td>
+              <span class="stock-badge" [class.stock-ok]="p.stock > 0" [class.stock-bajo]="p.stock <= 0">{{ p.stock }}</span>
+            </td>
+            <td>${{ p.costo | number:'1.2-2' }}</td>
+            <td>${{ p.precioRespInsc | number:'1.2-2' }}</td>
+            <td>${{ p.precioConsFinal | number:'1.2-2' }}</td>
+            <td>${{ p.precioCtaCte | number:'1.2-2' }}</td>
+            <td><button type="button" class="btn-link" (click)="abrirEdicion(p)">✏️ Editar</button></td>
+          </tr>
+          <tr *ngIf="!productosFiltrados.length">
+            <td colspan="9" class="empty-state">No se encontraron productos con ese filtro.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<app-alta-rapida-modal
+  [visible]="modalVisible"
+  [titulo]="tituloModal"
+  [campos]="campos"
+  [valoresIniciales]="valoresIniciales"
+  [guardando]="guardando"
+  (cerrar)="cerrarModal()"
+  (guardar)="guardarProducto($event)">
+</app-alta-rapida-modal>

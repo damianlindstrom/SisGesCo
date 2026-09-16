@@ -1,0 +1,18 @@
+<!-- Componente Navbar Unificado -->
+<nav class="app-navbar">
+  <div class="nav-brand">
+    <a routerLink="/" class="brand-link">⚙️ Sistema de Gestión</a>
+    <button type="button" class="nav-toggle" (click)="toggleMenuMobile()" aria-label="Abrir menú">
+      ☰
+    </button>
+  </div>
+
+  <div class="nav-menu" [class.visible]="menuVisible">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">🏠 Inicio</a>
+    <a routerLink="/ventas" routerLinkActive="active" class="nav-item">🛒 Ventas</a>
+    <a routerLink="/compras" routerLinkActive="active" class="nav-item">📋 Compras</a>
+    <a routerLink="/gastos-varios" routerLinkActive="active" class="nav-item">💸 Gastos Varios</a>
+    <a routerLink="/reportes" routerLinkActive="active" class="nav-item">📈 Reportes</a>
+    <a routerLink="/productos" routerLinkActive="active" class="nav-item">📦 Productos</a>
+  </div>
+</nav>

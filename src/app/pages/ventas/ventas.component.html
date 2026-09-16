@@ -1,0 +1,297 @@
+<div class="sub-header-tabs">
+  <div class="tab-switcher">
+    <button type="button" class="tab-btn" [class.active]="pestana==='venta'" (click)="cambiarPestana('venta')">🛒 Nueva Venta</button>
+    <button type="button" class="tab-btn" [class.active]="pestana==='cobro'" (click)="cambiarPestana('cobro')">💵 Cuenta Corriente</button>
+    <button type="button" class="tab-btn" [class.active]="pestana==='arqueo'" (click)="cambiarPestana('arqueo')">📊 Arqueo de Caja</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="msg" [class.ok]="mensaje.tipo==='ok'" [class.error]="mensaje.tipo==='error'" *ngIf="mensaje">
+    {{ mensaje.texto }}
+  </div>
+  <div class="loading" *ngIf="cargando">Cargando datos...</div>
+
+  <div *ngIf="!cargando">
+
+    <!-- ============ NUEVA VENTA ============ -->
+    <div class="section" [class.visible]="pestana==='venta'" *ngIf="pestana==='venta'">
+  <div class="card">
+    <h2>1. Comprador</h2>
+    <div class="grid-2">
+      <div>
+        <label>Buscar comprador</label>
+        <app-buscador
+          placeholder="Escribí nombre del comprador..."
+          [items]="clientes"
+          [titulo]="tituloCliente"
+          [subtitulo]="subtituloCliente"
+          [valorMostrado]="compradorSeleccionado?.nombre ?? ''"
+          (seleccionado)="onCompradorSeleccionado($event)">
+        </app-buscador>
+        <button type="button" class="btn-link" (click)="abrirModalCliente('venta')">➕ Nuevo comprador</button>
+      </div>
+      <div>
+        <label>Categoría</label>
+        <input type="text" readonly [value]="compradorSeleccionado?.categoriaNombre ?? ''" placeholder="Se completa automáticamente">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2. Agregar producto</h2>
+    <div class="grid-2">
+      <div>
+        <label>Buscar producto</label>
+        <app-buscador
+          placeholder="Escribí producto..."
+          [items]="productos"
+          [titulo]="tituloProducto"
+          [valorMostrado]="productoSeleccionado?.nombre ?? ''"
+          (seleccionado)="onProductoSeleccionado($event)">
+        </app-buscador>
+      </div>
+      <div>
+        <label>Cantidad</label>
+        <input type="number" min="1" [(ngModel)]="cantidad">
+      </div>
+    </div>
+
+        <div class="precios-box" [class.visible]="productoSeleccionado">
+          <ng-container *ngIf="productoSeleccionado as p">
+            <div class="precio-row">
+              <span class="label">📦 Stock disponible</span>
+              <span class="valor">
+                {{ p.stock }}
+                <span class="stock-badge" [class.stock-ok]="p.stock > 0" [class.stock-bajo]="p.stock <= 0">
+                  {{ p.stock > 0 ? 'OK' : 'Sin stock' }}
+                </span>
+              </span>
+            </div>
+            <div class="precio-row">
+              <span class="label">📋 Precio Resp. Inscripto</span>
+              <span class="valor">${{ p.precioRespInsc | number:'1.2-2' }}</span>
+            </div>
+            <div class="precio-row">
+              <span class="label">🧾 Precio Consumidor Final</span>
+              <span class="valor">${{ p.precioConsFinal | number:'1.2-2' }}</span>
+            </div>
+            <div class="precio-row">
+              <span class="label">💳 Precio Cliente c/cuenta cte.</span>
+              <span class="valor">${{ p.precioCtaCte | number:'1.2-2' }}</span>
+            </div>
+            <div class="precio-row destacado" *ngIf="compradorSeleccionado">
+              <span class="label"><strong>✅ Precio a aplicar</strong></span>
+              <span class="valor">${{ precioAplicar | number:'1.2-2' }}</span>
+            </div>
+          </ng-container>
+        </div>
+
+        <div style="margin-top:14px; text-align:right">
+          <button type="button" class="btn btn-primary" [disabled]="!productoSeleccionado || !compradorSeleccionado" (click)="agregarItem()">+ Agregar ítem</button>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="items.length">
+        <h2>3. Ítems de la venta</h2>
+        <div class="table-responsive">
+          <table class="items-table">
+            <thead>
+              <tr><th>Producto</th><th>Cant.</th><th>Precio unit.</th><th>Subtotal</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let it of items; let i = index">
+                <td>{{ it.productoNombre }}</td>
+                <td>{{ it.cantidad }}</td>
+                <td>${{ it.precioUnitario | number:'1.2-2' }}</td>
+                <td>${{ it.subtotal | number:'1.2-2' }}</td>
+                <td><button type="button" class="btn btn-danger" (click)="quitarItem(i)">✕</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="total-box">Total: ${{ totalVenta | number:'1.2-2' }}</div>
+      </div>
+
+      <div class="card">
+        <h2>4. Confirmar venta</h2>
+        <div class="grid-2">
+          <div>
+            <label>Forma de pago *</label>
+            <select [(ngModel)]="formaPago">
+              <option value="">— Seleccioná —</option>
+              <option *ngFor="let f of formasPagoVenta" [value]="f">{{ f }}</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <button type="button" class="btn btn-success" [disabled]="!puedeConfirmarVenta" (click)="confirmarVenta()">
+            {{ guardandoVenta ? 'Guardando...' : 'Confirmar venta' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CUENTA CORRIENTE ============ -->
+    <div class="section" [class.visible]="pestana==='cobro'" *ngIf="pestana==='cobro'">
+      <div class="card">
+        <h2>1. Seleccionar Cliente</h2>
+        <div class="grid-2">
+          <div>
+            <label>Buscar cliente</label>
+            <app-buscador
+              placeholder="Escribí nombre del cliente..."
+              [items]="clientes"
+              [titulo]="tituloCliente"
+              [subtitulo]="subtituloCliente"
+              [valorMostrado]="clienteCC?.nombre ?? ''"
+              (seleccionado)="onClienteCCSeleccionado($event)">
+            </app-buscador>
+            <button type="button" class="btn-link" (click)="abrirModalCliente('cobro')">➕ Nuevo cliente</button>
+          </div>
+          <div>
+            <label>Categoría / Datos</label>
+            <input type="text" readonly [value]="clienteCC?.categoriaNombre ?? ''" placeholder="Se completa automáticamente">
+          </div>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="cargandoCC">Obteniendo estado de cuenta del cliente...</div>
+
+      <div *ngIf="clienteCC && !cargandoCC">
+        <div class="card">
+          <h2>2. Registrar Cobro / Entrega de Dinero</h2>
+          <div class="grid-2">
+            <div>
+              <label>Monto Cobrado ($) *</label>
+              <input type="number" step="0.01" min="0.01" [(ngModel)]="montoCobro" placeholder="0.00">
+            </div>
+            <div>
+              <label>Forma de Pago *</label>
+              <select [(ngModel)]="formaPagoCobro">
+                <option value="">— Seleccioná —</option>
+                <option *ngFor="let f of formasPagoCobro" [value]="f">{{ f }}</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top: 12px;">
+            <label>Observaciones / Comprobante de Pago</label>
+            <input type="text" [(ngModel)]="obsCobro" placeholder="Ej: Recibo N° 0045 / Transferencia Cta Santander">
+          </div>
+
+          <div class="saldo-card-box">
+            <div class="saldo-box">
+              <div class="lbl">Saldo Actual (Anterior)</div>
+              <div class="val" [class.deuda]="saldoAnteriorCC > 0" [class.favor]="saldoAnteriorCC < 0" [class.neutro]="saldoAnteriorCC === 0">
+                ${{ saldoAnteriorCC | number:'1.2-2' }}
+              </div>
+            </div>
+            <div class="saldo-box">
+              <div class="lbl">Saldo Restante (Posterior)</div>
+              <div class="val" [class.deuda]="saldoPosteriorCC > 0" [class.favor]="saldoPosteriorCC < 0" [class.neutro]="saldoPosteriorCC === 0">
+                ${{ saldoPosteriorCC | number:'1.2-2' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="acciones-cc">
+            <button type="button" class="btn btn-success" [disabled]="!montoCobro || !formaPagoCobro || guardandoCobro" (click)="confirmarCobroCC()">
+              {{ guardandoCobro ? 'Guardando...' : 'Registrar Cobro' }}
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="limpiarFormularioCC()">🧹 Limpiar Datos / Cambiar Cliente</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>3. Estado de Cuenta (Historial)</h2>
+          <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+            <table class="items-table">
+              <thead>
+                <tr><th>Fecha</th><th>Concepto</th><th>Debe (Venta)</th><th>Haber (Pago)</th><th>Saldo acumulado</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of historialCC">
+                  <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ m.concepto }}</td>
+                  <td>{{ m.debe ? ('$' + (m.debe | number:'1.2-2')) : '' }}</td>
+                  <td>{{ m.haber ? ('$' + (m.haber | number:'1.2-2')) : '' }}</td>
+                  <td>${{ m.saldoAcumulado | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ARQUEO DE CAJA ============ -->
+    <div class="section" [class.visible]="pestana==='arqueo'" *ngIf="pestana==='arqueo'">
+      <div class="card">
+        <h2>1. Seleccionar Rango de Fechas</h2>
+        <div class="grid-3">
+          <div>
+            <label>Desde</label>
+            <input type="date" [(ngModel)]="desdeArqueo">
+          </div>
+          <div>
+            <label>Hasta</label>
+            <input type="date" [(ngModel)]="hastaArqueo">
+          </div>
+          <button type="button" class="btn btn-primary" style="align-self:end" (click)="consultarArqueo()">🔄 Consultar Movimientos</button>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="cargandoArqueo">Procesando Ingresos y Egresos de Cajas/Bancos...</div>
+
+      <div *ngIf="arqueo && !cargandoArqueo">
+        <div class="card">
+          <h2>2. Resumen</h2>
+          <div class="saldo-card-box">
+            <div class="saldo-box">
+              <div class="lbl">Ingresos</div>
+              <div class="val favor">${{ arqueo.totalIngresos | number:'1.2-2' }}</div>
+            </div>
+            <div class="saldo-box">
+              <div class="lbl">Egresos</div>
+              <div class="val deuda">${{ arqueo.totalEgresos | number:'1.2-2' }}</div>
+            </div>
+            <div class="saldo-box">
+              <div class="lbl">Saldo Neto</div>
+              <div class="val neutro">${{ arqueo.saldoNeto | number:'1.2-2' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>3. Movimientos</h2>
+          <div class="table-responsive">
+            <table class="items-table">
+              <thead>
+                <tr><th>Fecha</th><th>Concepto</th><th>Forma de pago</th><th>Ingreso</th><th>Egreso</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of arqueo.movimientos">
+                  <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ m.concepto }}</td>
+                  <td>{{ m.formaPago }}</td>
+                  <td>{{ m.ingreso ? ('$' + (m.ingreso | number:'1.2-2')) : '' }}</td>
+                  <td>{{ m.egreso ? ('$' + (m.egreso | number:'1.2-2')) : '' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<app-alta-rapida-modal
+  [visible]="modalClienteVisible"
+  titulo="Nuevo Comprador"
+  [campos]="camposCliente"
+  [guardando]="guardandoCliente"
+  (cerrar)="cerrarModalCliente()"
+  (guardar)="guardarCliente($event)">
+</app-alta-rapida-modal>

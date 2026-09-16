@@ -1,0 +1,100 @@
+.sub-header-tabs { background:#fff; padding:10px; border-bottom:1px solid #dadce0; }
+.tab-switcher { display:flex; gap:8px; }
+.tab-btn {
+  padding: 7px 16px; border-radius: 20px; border: 2px solid #0f9d58;
+  background: transparent; color: #0f9d58; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.tab-btn.active { background: #0f9d58; color: white; }
+
+.container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+.card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.card h2 { font-size: 15px; font-weight: 600; color: #0f9d58; margin-bottom: 16px; border-bottom: 1px solid #e8eaed; padding-bottom: 8px; }
+
+label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #555; }
+input, select, textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid #dadce0; border-radius: 6px;
+  font-size: 14px; outline: none; transition: border 0.2s; background: white;
+}
+input:focus, select:focus { border-color: #0f9d58; }
+input[readonly] { background: #f8f9fa; }
+.total-readonly { font-weight: 700; color: #0f9d58; background: #f1f9f4; }
+.hint { font-size: 11px; color: #888; margin-top: 3px; }
+.proveedor-sel { margin-top: 10px; font-size: 13px; color: #0f9d58; font-weight: 600; }
+.btn-link {
+  background: none; border: none; color: #0f9d58; font-size: 12px; font-weight: 600;
+  cursor: pointer; padding: 6px 0 0; text-decoration: underline;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media(max-width: 600px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+.tipo-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.tipo-btn {
+  padding: 8px 14px; border-radius: 20px; border: 2px solid #dadce0; background: white;
+  font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+}
+.tipo-btn:hover { border-color: #0f9d58; }
+.tipo-btn.active { border-color: #0f9d58; background: #e6f4ea; color: #0f9d58; font-weight: 600; }
+
+.impuestos-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 14px; }
+@media(max-width: 600px) { .impuestos-grid { grid-template-columns: 1fr; } }
+
+.precios-preview { background: #f8f9fa; border: 1px solid #e8eaed; border-radius: 6px; padding: 12px; margin-top: 8px; }
+.precios-preview .titulo { font-size: 12px; color: #888; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; }
+.precio-chip { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin: 3px; }
+.chip-trab { background: #e8f0fe; color: #1a73e8; }
+.chip-socio { background: #e6f4ea; color: #137333; }
+.chip-pub { background: #fce8e6; color: #c5221f; }
+
+.items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.items-table th { background: #f1f3f4; padding: 8px 10px; text-align: left; font-weight: 600; color: #555; }
+.items-table td { padding: 8px 10px; border-bottom: 1px solid #f1f3f4; vertical-align: middle; }
+.table-responsive { overflow-x: auto; }
+.total-box { text-align: right; padding: 12px 0 0; font-size: 18px; font-weight: 700; color: #0f9d58; }
+
+.btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+.btn-primary { background: #0f9d58; color: white; }
+.btn-primary:hover { background: #0b7a43; }
+.btn-primary:disabled { background: #9aa0a6; cursor: not-allowed; }
+.btn-danger { background: #fce8e6; color: #c5221f; font-size: 12px; padding: 5px 10px; }
+.btn-success { background: #0f9d58; color: white; width: 100%; padding: 14px; font-size: 16px; }
+.btn-success:hover { background: #0b7a43; }
+.btn-success:disabled { background: #9aa0a6; cursor: not-allowed; }
+
+.comp-card { border: 1px solid #dadce0; border-radius: 8px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.comp-card:hover { border-color: #0f9d58; }
+.comp-card.selected { border-color: #0f9d58; background: #f1f9f4; }
+.comp-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.comp-tipo { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; background: #f1f3f4; }
+.tipo-fact-merc { background: #e8f0fe; color: #1a73e8; }
+.tipo-nd { background: #fce8e6; color: #c5221f; }
+.tipo-nc { background: #e6f4ea; color: #137333; }
+.comp-nombre { font-size: 14px; font-weight: 600; margin: 6px 0 2px; }
+.comp-detalle { font-size: 12px; color: #888; }
+.comp-montos { display: flex; gap: 16px; margin-top: 8px; }
+.comp-monto-item { font-size: 12px; color: #555; }
+.comp-monto-item span { font-weight: 700; font-size: 14px; }
+.saldo-verde span { color: #137333 !important; }
+
+.badge-estado { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.estado-pendiente { background: #fef3e2; color: #e8710a; }
+.estado-parcial { background: #e8f0fe; color: #1a73e8; }
+.estado-credito { background: #e6f4ea; color: #137333; }
+
+.resumen-pago { background: #f8f9fa; border-radius: 8px; padding: 16px; margin-top: 8px; }
+.resumen-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; border-bottom: 1px solid #e8eaed; }
+.resumen-row:last-child { border-bottom: none; font-size: 16px; font-weight: 700; color: #0f9d58; }
+
+.msg { padding: 12px 16px; border-radius: 6px; font-size: 14px; margin-bottom: 16px; display: none; }
+.msg.ok { background: #e6f4ea; color: #137333; display: block; }
+.msg.error { background: #fce8e6; color: #c5221f; display: block; }
+.loading { text-align: center; padding: 40px; color: #888; font-size: 15px; }
+.empty-state { text-align: center; padding: 32px; color: #888; font-size: 14px; }
+
+@media (max-width: 768px) {
+  .container { margin: 12px auto; padding: 0 10px; }
+  .card { padding: 14px; margin-bottom: 12px; }
+  .grid-2, .grid-3, .impuestos-grid { grid-template-columns: 1fr !important; gap: 10px; }
+  input, select, .btn { font-size: 16px !important; min-height: 44px; }
+}

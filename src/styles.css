@@ -1,0 +1,9 @@
+/* Reset global mínimo. Sin esto, el <body> conserva el margin: 8px por
+   default del navegador y deja un hueco blanco arriba del navbar. */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  background: #f0f2f5;
+  color: #333;
+}

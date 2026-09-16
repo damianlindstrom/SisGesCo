@@ -1,0 +1,12 @@
+<div class="logo">⚙️ <span>Sis</span>tema de <span>Ges</span>tión para <span>Co</span>mercios</div>
+<div class="subtitulo">Seleccioná el módulo que querés usar</div>
+
+<div class="cards">
+  <a class="card" *ngFor="let m of modulos" [ngClass]="m.clase" [routerLink]="m.ruta">
+    <div class="icono">{{ m.icono }}</div>
+    <div class="titulo">{{ m.titulo }}</div>
+    <div class="desc">{{ m.desc }}</div>
+  </a>
+</div>
+
+<div class="footer">Sistema de Gestión para Comercios — hecho por Damian Lindstrom</div>

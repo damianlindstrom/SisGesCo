@@ -1,0 +1,38 @@
+<div class="container">
+  <div class="msg" [class.ok]="mensaje.tipo==='ok'" [class.error]="mensaje.tipo==='error'" *ngIf="mensaje">{{ mensaje.texto }}</div>
+
+  <div class="card">
+    <h2>1. Detalles del Gasto</h2>
+
+    <div class="grid-2">
+      <div>
+        <label>Título del Gasto</label>
+        <input type="text" [(ngModel)]="nombre" placeholder="Ej: Pago ABL o Librería">
+
+        <label>Clasificación</label>
+        <select [(ngModel)]="tipo">
+          <option *ngFor="let c of clasificaciones" [value]="c.valor">{{ c.label }}</option>
+        </select>
+
+        <label>Importe Total ($)</label>
+        <input type="number" step="0.01" [(ngModel)]="importe" placeholder="0.00" class="importe-input">
+      </div>
+
+      <div>
+        <label>Descripción / Leyenda</label>
+        <textarea [(ngModel)]="descripcion" placeholder="Ingresá detalles adicionales del comprobante o motivo del gasto..."></textarea>
+
+        <label>Forma de Pago</label>
+        <select [(ngModel)]="formaPago">
+          <option *ngFor="let f of formasPago" [value]="f">{{ f }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top: 10px;">
+      <button type="button" class="btn btn-primary" [disabled]="guardando" (click)="guardarGasto()">
+        {{ guardando ? 'Registrando...' : 'Registrar y Pagar Gasto' }}
+      </button>
+    </div>
+  </div>
+</div>

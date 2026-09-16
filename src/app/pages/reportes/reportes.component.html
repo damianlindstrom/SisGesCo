@@ -1,0 +1,188 @@
+<div class="sub-header-tabs">
+  <div class="tab-switcher">
+    <button type="button" class="tab-btn" [class.active]="pestana==='impuestos'" (click)="cambiarPestana('impuestos')">🧾 Impuestos</button>
+    <button type="button" class="tab-btn" [class.active]="pestana==='operativos'" (click)="cambiarPestana('operativos')">📈 Reportes Operativos</button>
+    <button type="button" class="tab-btn" [class.active]="pestana==='personalizados'" (click)="cambiarPestana('personalizados')">🛠️ Reportes Personalizados</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="msg" [class.ok]="mensaje.tipo==='ok'" [class.error]="mensaje.tipo==='error'" *ngIf="mensaje">{{ mensaje.texto }}</div>
+  <div class="loading" *ngIf="cargando">Cargando datos...</div>
+
+  <div *ngIf="!cargando">
+
+    <!-- ============ IMPUESTOS ============ -->
+    <div *ngIf="pestana==='impuestos'">
+      <div class="card">
+        <h2>1. Reporte impositivo</h2>
+        <div class="grid-3">
+          <div>
+            <label>Impuesto</label>
+            <select [(ngModel)]="impuestoSeleccionadoId">
+              <option *ngFor="let i of impuestos" [value]="i.id">{{ i.nombre }}</option>
+            </select>
+          </div>
+          <div><label>Fecha Desde</label><input type="date" [(ngModel)]="desdeImpuestos"></div>
+          <div><label>Fecha Hasta</label><input type="date" [(ngModel)]="hastaImpuestos"></div>
+        </div>
+        <div style="margin-top:14px">
+          <button type="button" class="btn btn-primary" [disabled]="!impuestoSeleccionadoId || consultandoImpuesto" (click)="consultarReporte()">
+            {{ consultandoImpuesto ? 'Consultando...' : '📊 Generar reporte' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="consultandoImpuesto">Procesando movimientos...</div>
+
+      <div class="card" *ngIf="reporteImpositivo && !consultandoImpuesto">
+        <h2>2. Resultado</h2>
+        <div class="empty-state" *ngIf="!reporteImpositivo.movimientos.length">No hay movimientos de {{ reporteImpositivo.impuesto }} en el rango seleccionado.</div>
+
+        <ng-container *ngIf="reporteImpositivo.movimientos.length">
+  <div class="table-responsive">
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Origen</th>
+          <th>Concepto</th>
+          <th>Contraparte</th>
+          <th>Neto</th>
+          <th>{{ reporteImpositivo.impuesto }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of reporteImpositivo.movimientos">
+          <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+          <td>{{ m.origen === 'VENTA' ? 'Venta' : 'Compra' }}</td>
+          <td>{{ m.concepto }}</td>
+          <td>{{ m.contraparte }}</td>
+          <td [class.neg]="m.origen === 'COMPRA'">
+            {{ m.origen === 'COMPRA' ? '-' : '' }}${{ m.neto | number:'1.2-2' }}
+          </td>
+          <td [class.neg]="m.origen === 'COMPRA'">
+            {{ m.origen === 'COMPRA' ? '-' : '' }}${{ m.montoImpuesto | number:'1.2-2' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="total-box">
+    <span>Neto: <strong>${{ totalNetoCalculado | number:'1.2-2' }}</strong></span>
+    &nbsp;·&nbsp;
+    <span>
+      {{ reporteImpositivo.impuesto }}
+      <small>({{ totalImpuestoCalculado < 0 ? 'Saldo a favor / Crédito' : 'A pagar / Débito' }})</small>:
+      <strong [class.pos]="totalImpuestoCalculado < 0" [class.neg]="totalImpuestoCalculado > 0">
+        ${{ totalImpuestoCalculado | number:'1.2-2' }}
+      </strong>
+    </span>
+  </div>
+
+  <div style="margin-top:12px; text-align:right">
+    <button type="button" class="btn btn-secondary" (click)="exportarCSVImpositivo()">⬇️ Exportar CSV</button>
+  </div>
+</ng-container>
+      </div>
+    </div>
+
+    <!-- ============ REPORTES OPERATIVOS: RESULTADO DEL PERÍODO ============ -->
+    <div *ngIf="pestana==='operativos'">
+      <div class="card">
+        <h2>1. Resultado del período</h2>
+        <div class="grid-3">
+          <div><label>Desde</label><input type="date" [(ngModel)]="desdeOperativo"></div>
+          <div><label>Hasta</label><input type="date" [(ngModel)]="hastaOperativo"></div>
+          <button type="button" class="btn btn-primary" style="align-self:end" [disabled]="consultandoOperativo" (click)="consultarResultado()">
+            {{ consultandoOperativo ? 'Consultando...' : '📊 Calcular resultado' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="consultandoOperativo">Procesando ventas, compras y gastos...</div>
+
+      <div *ngIf="resultado && !consultandoOperativo">
+        <div class="card">
+          <h2>2. Resumen</h2>
+          <div class="resumen-linea">
+            <span>💰 Ingresos por ventas <small>(sin descontar CMV)</small></span>
+            <span class="pos">${{ resultado.ventas.total | number:'1.2-2' }}</span>
+          </div>
+          <div class="resumen-linea">
+            <span>📋 Compras del período</span>
+            <span class="neg">− ${{ resultado.compras.total | number:'1.2-2' }}</span>
+          </div>
+          <div class="resumen-linea">
+            <span>🏢 Gastos varios</span>
+            <span class="neg">− ${{ resultado.gastos.total | number:'1.2-2' }}</span>
+          </div>
+          <div class="resumen-linea resultado">
+            <span>= Resultado bruto</span>
+            <span [class.pos]="resultado.resultadoBruto >= 0" [class.neg]="resultado.resultadoBruto < 0">${{ resultado.resultadoBruto | number:'1.2-2' }}</span>
+          </div>
+          <div class="resumen-linea">
+            <span>📦 CMV (costo de mercadería vendida)</span>
+            <span class="neg">− ${{ resultado.cmv | number:'1.2-2' }}</span>
+          </div>
+          <div class="resumen-linea resultado final">
+            <span>= Resultado neto</span>
+            <span [class.pos]="resultado.resultadoNeto >= 0" [class.neg]="resultado.resultadoNeto < 0">${{ resultado.resultadoNeto | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <div class="card" *ngIf="resultado.compras.detalle.length">
+          <h2>3. Detalle de compras</h2>
+          <div class="table-responsive">
+            <table class="items-table">
+              <thead><tr><th>Fecha</th><th>Proveedor</th><th>Comprobante</th><th>Tipo</th><th>Monto</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let c of resultado.compras.detalle">
+                  <td>{{ c.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ c.proveedor }}</td>
+                  <td>{{ c.nroComprobante || '—' }}</td>
+                  <td>{{ c.tipo }}</td>
+                  <td [class.neg]="c.monto < 0">${{ c.monto | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" *ngIf="resultado.gastos.detalle.length">
+          <h2>4. Detalle de gastos varios</h2>
+          <div class="table-responsive">
+            <table class="items-table">
+              <thead><tr><th>Fecha</th><th>Gasto</th><th>Clasificación</th><th>Forma de pago</th><th>Importe</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let g of resultado.gastos.detalle">
+                  <td>{{ g.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ g.nombreCorto }}</td>
+                  <td>{{ g.tipo }}</td>
+                  <td>{{ g.formaPago }}</td>
+                  <td>${{ g.importe | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="text-align:right; margin-bottom:24px">
+          <button type="button" class="btn btn-secondary" (click)="exportarCSVResultado()">⬇️ Exportar CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ REPORTES PERSONALIZADOS ============ -->
+    <div *ngIf="pestana==='personalizados'">
+      <div class="card operativos-card">
+        <div class="icono-grande">🛠️</div>
+        <h2 class="sin-borde">Reportes Personalizados</h2>
+        <p>¿Necesitás un reporte a medida — análisis de rentabilidad por producto, proyecciones, comparativas entre períodos u otra vista que no esté acá?</p>
+        <p>Comunicate conmigo y lo armamos: <a href="https://damianlindstrom.com.ar" target="_blank" rel="noopener">damianlindstrom.com.ar</a></p>
+      </div>
+    </div>
+
+  </div>
+</div>

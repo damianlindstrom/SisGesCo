@@ -1,0 +1,234 @@
+<div class="sub-header-tabs">
+  <div class="tab-switcher">
+    <button type="button" class="tab-btn" [class.active]="pestana==='comprobantes'" (click)="cambiarPestana('comprobantes')">📋 Comprobantes</button>
+    <button type="button" class="tab-btn" [class.active]="pestana==='pagos'" (click)="cambiarPestana('pagos')">💵 Pagos</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="msg" [class.ok]="mensaje.tipo==='ok'" [class.error]="mensaje.tipo==='error'" *ngIf="mensaje">{{ mensaje.texto }}</div>
+  <div class="loading" *ngIf="cargando">Cargando datos...</div>
+
+  <div *ngIf="!cargando">
+
+    <!-- ============ COMPROBANTES ============ -->
+    <div *ngIf="pestana==='comprobantes'">
+      <div class="card">
+        <h2>1. Proveedor</h2>
+        <app-buscador
+          placeholder="Buscar proveedor..."
+          [items]="proveedores"
+          [titulo]="tituloProveedor"
+          [subtitulo]="subtituloProveedor"
+          [valorMostrado]="proveedorComp?.nombre ?? ''"
+          (seleccionado)="onProveedorCompSeleccionado($event)">
+        </app-buscador>
+        <button type="button" class="btn-link" (click)="abrirModalProveedor('comprobante')">➕ Nuevo proveedor</button>
+        <div class="proveedor-sel" *ngIf="proveedorComp">✓ {{ proveedorComp.nombre }}<span *ngIf="proveedorComp.cuit"> — CUIT: {{ proveedorComp.cuit }}</span></div>
+      </div>
+
+      <div class="card">
+        <h2>2. Tipo de comprobante</h2>
+        <div class="tipo-selector">
+          <button type="button" class="tipo-btn" *ngFor="let t of tipos" [class.active]="tipoComp===t.valor" (click)="seleccionarTipo(t.valor)">{{ t.label }}</button>
+        </div>
+        <div class="grid-2" style="margin-top:14px">
+          <div>
+            <label>Nº Comprobante *</label>
+            <input type="text" [(ngModel)]="nroComprobante" placeholder="A00001-00000001" maxlength="15" style="text-transform:uppercase">
+            <div class="hint">Formato: A00001-00000001 (letra + 5 dígitos - 8 dígitos)</div>
+          </div>
+        </div>
+
+        <div *ngIf="tipoComp" style="margin-top:16px">
+          <div style="font-size:13px; font-weight:600; color:#555; margin-bottom:8px;">Importes del comprobante</div>
+          <div class="impuestos-grid">
+            <div><label>Neto ($) *</label><input type="number" min="0" step="0.01" [(ngModel)]="neto"></div>
+            <div><label>IVA ($)</label><input type="number" min="0" step="0.01" [(ngModel)]="iva"></div>
+            <div><label>IIBB ($)</label><input type="number" min="0" step="0.01" [(ngModel)]="iibb"></div>
+            <div><label>No gravado ($)</label><input type="number" min="0" step="0.01" [(ngModel)]="noGravado"></div>
+            <div style="grid-column: span 2">
+              <label>Total comprobante ($)</label>
+              <input type="text" readonly [value]="totalComprobante | number:'1.2-2'" class="total-readonly">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FACTURA MERCADERÍA -->
+      <div class="card" *ngIf="tipoComp==='FACTURA_MERCADERIA'">
+        <h2>3. Productos</h2>
+        <div class="grid-3">
+          <div style="grid-column: span 2">
+            <label>Buscar producto</label>
+            <app-buscador
+              placeholder="Escribí producto..."
+              [items]="productos"
+              [titulo]="tituloProducto"
+              [valorMostrado]="productoComp?.nombre ?? ''"
+              (seleccionado)="onProductoCompSeleccionado($event)">
+            </app-buscador>
+            <button type="button" class="btn-link" (click)="abrirModalProducto()">➕ Nuevo producto</button>
+          </div>
+        <div>
+      <label>Cantidad</label>
+      <input type="number" min="1" [(ngModel)]="cantidadComp">
+    </div>
+  </div>
+
+        <div *ngIf="productoComp" style="margin-top:10px;">
+          <div class="grid-2" style="margin-bottom:8px">
+            <div><label>Costo actual</label><input type="text" readonly [value]="'$' + (productoComp.costo | number:'1.2-2')"></div>
+            <div><label>Nuevo costo</label><input type="number" [(ngModel)]="nuevoCosto" placeholder="Ingresá el costo de factura"></div>
+          </div>
+
+          <div class="precios-preview" *ngIf="previewPrecios as pv">
+            <div class="titulo">Preview precios de venta (simulado)</div>
+            <span class="precio-chip chip-trab">Resp. Inscripto: ${{ pv.respInsc | number:'1.2-2' }}</span>
+            <span class="precio-chip chip-socio">Cons. Final: ${{ pv.consFinal | number:'1.2-2' }}</span>
+            <span class="precio-chip chip-pub">Cta. Cte.: ${{ pv.ctaCte | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; text-align:right">
+          <button type="button" class="btn btn-primary" [disabled]="!productoComp" (click)="agregarItemComp()">+ Agregar</button>
+        </div>
+
+        <div *ngIf="itemsComp.length" style="margin-top:16px">
+          <div class="table-responsive">
+            <table class="items-table">
+              <thead><tr><th>Producto</th><th>Cant.</th><th>Costo unit.</th><th>Subtotal</th><th></th></tr></thead>
+              <tbody>
+                <tr *ngFor="let it of itemsComp; let i = index">
+                  <td>{{ it.productoNombre }}</td>
+                  <td>{{ it.cantidad }}</td>
+                  <td>${{ it.costoUnitario | number:'1.2-2' }}</td>
+                  <td>${{ it.subtotal | number:'1.2-2' }}</td>
+                  <td><button type="button" class="btn btn-danger" (click)="quitarItemComp(i)">✕</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="total-box">Total productos: ${{ totalItemsComp | number:'1.2-2' }}</div>
+        </div>
+      </div>
+      
+
+      <!-- NOTA DE DÉBITO / CRÉDITO -->
+      <div class="card" *ngIf="tipoComp==='NOTA_DEBITO' || tipoComp==='NOTA_CREDITO'">
+        <h2>3. Detalle</h2>
+
+        <div *ngIf="tipoComp==='NOTA_CREDITO'" style="margin-bottom:14px;">
+          <label style="margin-bottom:8px">¿Esta NC aplica a un comprobante existente?</label>
+          <div style="display:flex; gap:10px">
+            <button type="button" class="tipo-btn" [class.active]="ncVinculada===true" (click)="ncVinculada=true">Sí, vincular a comprobante</button>
+            <button type="button" class="tipo-btn" [class.active]="ncVinculada===false" (click)="ncVinculada=false">No, es crédito independiente</button>
+          </div>
+        </div>
+
+        <div *ngIf="tipoComp==='NOTA_CREDITO' && ncVinculada===true" style="margin-bottom:14px;">
+          <label>Comprobante original</label>
+          <app-buscador
+            placeholder="Buscar comprobante del proveedor..."
+            [items]="comprobantesProveedor"
+            [titulo]="tituloComprobante"
+            [valorMostrado]="comprobantePadre?.nroComprobante ?? ''"
+            (seleccionado)="onComprobantePadreSeleccionado($event)">
+          </app-buscador>
+        </div>
+
+        <div class="grid-2">
+          <div><label>Motivo / Detalle</label><input type="text" [(ngModel)]="motivoNDNC" placeholder="Descripción"></div>
+          <div><label>Monto</label><input type="number" [(ngModel)]="montoNDNC" placeholder="0.00"></div>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="tipoComp">
+        <h2>4. Confirmar</h2>
+        <button type="button" class="btn btn-success" [disabled]="!puedeGrabarComprobante" (click)="grabarComprobante()">
+          {{ guardandoComprobante ? 'Guardando...' : 'Grabar comprobante' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ PAGOS ============ -->
+    <div *ngIf="pestana==='pagos'">
+      <div class="card">
+        <h2>1. Seleccionar proveedor</h2>
+        <app-buscador
+          placeholder="Buscar proveedor..."
+          [items]="proveedores"
+          [titulo]="tituloProveedor"
+          [subtitulo]="subtituloProveedor"
+          [valorMostrado]="proveedorPago?.nombre ?? ''"
+          (seleccionado)="onProveedorPagoSeleccionado($event)">
+        </app-buscador>
+        <button type="button" class="btn-link" (click)="abrirModalProveedor('pago')">➕ Nuevo proveedor</button>
+      </div>
+
+      <div class="loading" *ngIf="cargandoPendientes">Buscando comprobantes pendientes...</div>
+
+      <div class="card" *ngIf="proveedorPago && !cargandoPendientes">
+        <h2>2. Comprobantes pendientes</h2>
+        <div class="empty-state" *ngIf="!comprobantesPendientes.length">No hay comprobantes pendientes para este proveedor.</div>
+        <div class="comp-card" *ngFor="let c of comprobantesPendientes"
+             [class.selected]="comprobantesSeleccionados.has(c.id)"
+             (click)="toggleComprobanteSeleccionado(c)">
+          <div class="comp-header">
+            <span class="comp-tipo"
+                  [class.tipo-fact-merc]="c.tipo==='FACTURA_MERCADERIA'"
+                  [class.tipo-nd]="c.tipo==='NOTA_DEBITO'"
+                  [class.tipo-nc]="c.tipo==='NOTA_CREDITO'">{{ c.tipo }}</span>
+            <span class="badge-estado"
+                  [class.estado-pendiente]="c.estado==='PENDIENTE'"
+                  [class.estado-parcial]="c.estado==='PAGO_PARCIAL'"
+                  [class.estado-credito]="c.estado==='CREDITO_DISPONIBLE'">{{ c.estado }}</span>
+          </div>
+          <div class="comp-nombre">{{ c.nroComprobante }}</div>
+          <div class="comp-detalle">{{ c.fecha | date:'dd/MM/yyyy' }}</div>
+          <div class="comp-montos">
+            <div class="comp-monto-item">Total <span>${{ c.montoTotal | number:'1.2-2' }}</span></div>
+            <div class="comp-monto-item saldo-verde">Saldo <span>${{ c.saldo | number:'1.2-2' }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="comprobantesSeleccionados.size">
+        <h2>3. Registrar pago</h2>
+        <div class="resumen-pago">
+          <div class="resumen-row"><span>Comprobantes seleccionados</span><span>{{ comprobantesSeleccionados.size }}</span></div>
+          <div class="resumen-row"><span>Total adeudado</span><span>${{ totalSeleccionadoPago | number:'1.2-2' }}</span></div>
+        </div>
+        <div class="grid-2" style="margin-top:14px">
+          <div>
+            <label>Forma de pago *</label>
+            <select [(ngModel)]="formaPagoPago">
+              <option value="">— Seleccioná —</option>
+              <option *ngFor="let f of formasPago" [value]="f">{{ f }}</option>
+            </select>
+          </div>
+          <div>
+            <label>Monto a pagar</label>
+            <input type="number" [(ngModel)]="montoAPagar" placeholder="0.00">
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <button type="button" class="btn btn-success" [disabled]="!puedeConfirmarPago" (click)="confirmarPago()">
+            {{ guardandoPago ? 'Guardando...' : 'Confirmar pago' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<app-alta-rapida-modal
+  [visible]="modalProductoVisible"
+  titulo="Nuevo producto"
+  [campos]="camposProducto"
+  [guardando]="guardandoProducto"
+  (cerrar)="cerrarModalProducto()"
+  (guardar)="guardarProducto($event)">
+</app-alta-rapida-modal>

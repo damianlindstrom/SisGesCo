@@ -1,0 +1,19 @@
+<div class="search-wrapper">
+  <input
+    type="text"
+    [placeholder]="placeholder"
+    autocomplete="off"
+    [(ngModel)]="texto"
+    (input)="onInput()"
+    (focus)="onInput()"
+    (blur)="onBlur()">
+  <div class="dropdown-list" [class.visible]="visible && filtrados.length">
+    <div
+      class="dropdown-item"
+      *ngFor="let item of filtrados"
+      (mousedown)="$event.preventDefault(); elegir(item)">
+      {{ titulo(item) }}
+      <div class="sub" *ngIf="subtitulo">{{ subtitulo(item) }}</div>
+    </div>
+  </div>
+</div>

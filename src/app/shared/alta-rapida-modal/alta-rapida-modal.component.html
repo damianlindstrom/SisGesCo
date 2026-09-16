@@ -1,0 +1,31 @@
+<div class="modal-overlay" *ngIf="visible">
+  <div class="modal-content">
+    <h3>➕ {{ titulo }}</h3>
+    <div class="campos">
+      <ng-container *ngFor="let campo of campos">
+        <label>{{ campo.label }}{{ campo.requerido ? ' *' : '' }}</label>
+        <input
+          *ngIf="campo.tipo === 'text'"
+          type="text"
+          [placeholder]="campo.placeholder ?? ''"
+          [(ngModel)]="valores[campo.key]">
+        <input
+          *ngIf="campo.tipo === 'number'"
+          type="number"
+          step="any"
+          [placeholder]="campo.placeholder ?? ''"
+          [(ngModel)]="valores[campo.key]">
+        <select *ngIf="campo.tipo === 'select'" [(ngModel)]="valores[campo.key]">
+          <option value="">— Seleccioná —</option>
+          <option *ngFor="let op of campo.opciones" [value]="op.value">{{ op.label }}</option>
+        </select>
+      </ng-container>
+    </div>
+    <div class="acciones">
+      <button type="button" class="btn-cancelar" (click)="onCerrar()">Cancelar</button>
+      <button type="button" class="btn-guardar" [disabled]="!esValido || guardando" (click)="onGuardar()">
+        {{ guardando ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+</div>
