@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://sisgesco-be.onrender.com'
+  apiUrl: 'https://sisgesco-be.onrender.com/api'
 };
