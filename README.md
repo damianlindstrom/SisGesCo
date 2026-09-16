@@ -1,27 +1,63 @@
-# SisgesAngular
+# 📊 Sistema de Gestión para Comercios (SisGesCo)
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
+Sistema de gestión comercial e impositivo fullstack diseñado para la administración integral de ventas, compras, cuentas corrientes, control de stock y reportes financieros/fiscales.
 
-## Development server
+---
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## 🛠️ Tecnologías utilizadas
 
-## Code scaffolding
+### **Frontend**
+* **Framework:** Angular (Standalone Components)
+* **Lenguaje:** TypeScript
+* **Estilos:** CSS3 / Flexbox (Responsive Design)
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+### **Backend**
+* **Runtime & Framework:** Node.js + Express
+* **ORM:** Prisma ORM
+* **Validación de esquemas:** Zod
+* **Base de Datos:** MySQL 8.0
 
-## Build
+---
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+## 🚀 Funcionalidades principales
 
-## Running unit tests
+* 🛒 **Módulo de Ventas:**
+  * Buscador rápido de clientes y productos.
+  * Cálculo automático de precios según categoría impositiva del cliente (*Resp. Inscripto, Consumidor Final, Cliente c/ Cta. Cte.*).
+  * Control de stock en tiempo real y registro de formas de pago.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+* 💵 **Cuentas Corrientes:**
+  * Historial acumulado de movimientos (*Debe / Haber / Saldo*).
+  * Registro de cobros y entregas parciales sin perder la trazabilidad del cliente.
 
-## Running end-to-end tests
+* 📋 **Módulo de Compras:**
+  * Registro de Facturas de Mercadería, Notas de Débito y Notas de Crédito.
+  * Alta rápida de proveedores y productos directamente desde el flujo de compra.
+  * Validación automática entre el Neto de la factura y los subtotales de materiales cargados.
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+* 📦 **Gestión de Productos & Stock:**
+  * Administración de costos, stock inicial y reglas de margen (multiplicadores).
+  * Búsqueda por rubro, tipo y nombre.
 
-## Further help
+* 📊 **Reportes & Exportación:**
+  * **Reporte Impositivo (IVA):** Distinción entre Débito Fiscal (ventas) y Crédito Fiscal (compras) para cálculo de saldo a favor o a pagar.
+  * **Reporte Operativo:** Resultado bruto/neto del período y Costo de Mercadería Vendida (CMV).
+  * **Exportación a CSV:** Compatibilidad nativa con Microsoft Excel (BOM UTF-8 y delimitador `;`).
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+---
+
+## 📋 Requisitos previos
+
+Asegurate de tener instalado en tu equipo:
+* [Node.js](https://nodejs.org/) (versión 18 o superior)
+* MySQL Server 8.0 y MySQL Workbench
+* [Angular CLI](https://angular.dev/) (`npm install -g @angular/cli`)
+
+---
+
+## ⚙️ Instalación y Configuración
+
+### 1. Clonar el repositorio
+```bash
+git clone [https://github.com/tu-usuario/sisges.git](https://github.com/tu-usuario/sisges.git)
+cd sisges
