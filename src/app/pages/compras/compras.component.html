@@ -232,3 +232,11 @@
   (cerrar)="cerrarModalProducto()"
   (guardar)="guardarProducto($event)">
 </app-alta-rapida-modal>
+<app-alta-rapida-modal
+  [visible]="modalProveedorVisible"
+  titulo="Nuevo proveedor"
+  [campos]="camposProveedor"
+  [guardando]="guardandoProveedor"
+  (cerrar)="cerrarModalProveedor()"
+  (guardar)="guardarProveedor($event)">
+</app-alta-rapida-modal>
