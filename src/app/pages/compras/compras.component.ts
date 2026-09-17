@@ -18,7 +18,6 @@ const CAMPOS_PRODUCTO: CampoFormulario[] = [
   { key: 'rubro', label: 'Rubro', tipo: 'text', placeholder: 'Ej: Materiales' },
   { key: 'tipo', label: 'Tipo', tipo: 'text', placeholder: 'Ej: Vigas' },
   { key: 'costo', label: 'Costo ($)', tipo: 'number', placeholder: '0.00', requerido: true },
-  { key: 'stock', label: 'Stock inicial', tipo: 'number', placeholder: '0', requerido: true },
   { key: 'pctRespInsc', label: 'Multiplicador Resp. Inscripto (ej: 1.40)', tipo: 'number', placeholder: '1.40', requerido: true },
   { key: 'pctConsFinal', label: 'Multiplicador Consumidor Final (ej: 1.64)', tipo: 'number', placeholder: '1.64', requerido: true },
   { key: 'pctCtaCte', label: 'Multiplicador Cliente c/cta. cte. (ej: 1.68)', tipo: 'number', placeholder: '1.68', requerido: true },
@@ -378,27 +377,27 @@ cerrarModalProducto(): void {
 }
 
 async guardarProducto(valores: Record<string, string>): Promise<void> {
-  this.guardandoProducto = true;
-  const datos = {
-    nombre: valores['nombre'],
-    rubro: valores['rubro'] || undefined,
-    tipo: valores['tipo'] || undefined,
-    costo: Number(valores['costo']),
-    stock: Number(valores['stock']),
-    pctRespInsc: Number(valores['pctRespInsc']),
-    pctConsFinal: Number(valores['pctConsFinal']),
-    pctCtaCte: Number(valores['pctCtaCte']),
-  };
-  try {
-    const nuevo = await this.productosService.crear(datos);
-    this.productos = [...this.productos, nuevo];
-    this.productoComp = nuevo; // Lo selecciona automáticamente en la compra
-    this.modalProductoVisible = false;
-    this.mostrarMensaje('ok', 'Producto creado y seleccionado correctamente.');
-  } catch (e) {
-    this.mostrarMensaje('error', 'No se pudo crear el producto: ' + (e as Error).message);
-  } finally {
-    this.guardandoProducto = false;
+    this.guardandoProducto = true;
+    const datos = {
+      nombre: valores['nombre'],
+      rubro: valores['rubro'] || undefined,
+      tipo: valores['tipo'] || undefined,
+      costo: Number(valores['costo']),
+      stock: 0, // <-- 2. Nace en 0 porque el comprobante de compra sumará el stock real
+      pctRespInsc: Number(valores['pctRespInsc']),
+      pctConsFinal: Number(valores['pctConsFinal']),
+      pctCtaCte: Number(valores['pctCtaCte']),
+    };
+    try {
+      const nuevo = await this.productosService.crear(datos);
+      this.productos = [...this.productos, nuevo];
+      this.productoComp = nuevo; // Lo selecciona automáticamente en la compra
+      this.modalProductoVisible = false;
+      this.mostrarMensaje('ok', 'Producto creado y seleccionado correctamente.');
+    } catch (e) {
+      this.mostrarMensaje('error', 'No se pudo crear el producto: ' + (e as Error).message);
+    } finally {
+      this.guardandoProducto = false;
+    }
   }
-}
 }
