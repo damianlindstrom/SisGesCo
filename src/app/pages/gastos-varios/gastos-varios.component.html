@@ -1,12 +1,13 @@
 <div class="container">
   <div class="msg" [class.ok]="mensaje.tipo==='ok'" [class.error]="mensaje.tipo==='error'" *ngIf="mensaje">{{ mensaje.texto }}</div>
+  <div class="loading" *ngIf="cargando">Cargando formulario de gastos...</div>
 
-  <div class="card">
+  <div class="card" *ngIf="!cargando">
     <h2>1. Detalles del Gasto</h2>
 
     <div class="grid-2">
       <div>
-        <label>Título del Gasto</label>
+        <label>Título del Gasto *</label>
         <input type="text" [(ngModel)]="nombre" placeholder="Ej: Pago ABL o Librería">
 
         <label>Clasificación</label>
@@ -14,23 +15,53 @@
           <option *ngFor="let c of clasificaciones" [value]="c.valor">{{ c.label }}</option>
         </select>
 
-        <label>Importe Total ($)</label>
-        <input type="number" step="0.01" [(ngModel)]="importe" placeholder="0.00" class="importe-input">
+        <label>Nº Comprobante (Opcional)</label>
+        <input type="text" [(ngModel)]="nroComprobante" placeholder="00001-00000001">
       </div>
 
       <div>
-        <label>Descripción / Leyenda</label>
-        <textarea [(ngModel)]="descripcion" placeholder="Ingresá detalles adicionales del comprobante o motivo del gasto..."></textarea>
-
-        <label>Forma de Pago</label>
+        <label>Forma de Pago *</label>
         <select [(ngModel)]="formaPago">
           <option *ngFor="let f of formasPago" [value]="f">{{ f }}</option>
         </select>
+
+        <label>Descripción / Leyenda</label>
+        <textarea [(ngModel)]="descripcion" placeholder="Ingresá detalles adicionales del comprobante o motivo del gasto..."></textarea>
       </div>
     </div>
 
-    <div style="margin-top: 10px;">
-      <button type="button" class="btn btn-primary" [disabled]="guardando" (click)="guardarGasto()">
+    <!-- Desglose de Importes e Impuestos -->
+    <div style="margin-top:20px; border-top:1px solid #eee; padding-top:16px;">
+      <h3 style="font-size:15px; font-weight:600; color:#444; margin-bottom:12px;">Desglose de Importes e Impuestos</h3>
+
+      <div class="impuestos-grid">
+        <div>
+          <label>Neto ($)</label>
+          <input type="number" min="0" step="0.01" [(ngModel)]="neto" (ngModelChange)="onNetoChange()" placeholder="0.00">
+        </div>
+
+        <!-- Impuestos Dinámicos -->
+        <div *ngFor="let imp of impuestosDisponibles">
+          <ng-container *ngIf="imp.id !== undefined">
+            <label>{{ imp.nombre }} ({{ imp.porcentaje }}%) ($)</label>
+            <input type="number" min="0" step="0.01" [(ngModel)]="impuestosValores[imp.id]" placeholder="0.00">
+          </ng-container>
+        </div>
+
+        <div>
+          <label>No gravado ($)</label>
+          <input type="number" min="0" step="0.01" [(ngModel)]="noGravado" placeholder="0.00">
+        </div>
+
+        <div style="grid-column: span 2">
+          <label>Importe Total Final ($)</label>
+          <input type="text" readonly [value]="totalGasto | number:'1.2-2'" class="total-readonly">
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <button type="button" class="btn btn-primary" [disabled]="guardando || !nombre || totalGasto <= 0" (click)="guardarGasto()">
         {{ guardando ? 'Registrando...' : 'Registrar y Pagar Gasto' }}
       </button>
     </div>

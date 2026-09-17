@@ -43,9 +43,24 @@
         <div *ngIf="tipoComp" style="margin-top:16px">
           <div style="font-size:13px; font-weight:600; color:#555; margin-bottom:8px;">Importes del comprobante</div>
           <div class="impuestos-grid">
-            <div><label>Neto ($) *</label><input type="number" min="0" step="0.01" [(ngModel)]="neto"></div>
-            <div><label>IVA ($)</label><input type="number" min="0" step="0.01" [(ngModel)]="iva"></div>
-            <div><label>IIBB ($)</label><input type="number" min="0" step="0.01" [(ngModel)]="iibb"></div>
+            <div>
+              <label>Neto ($) *</label>
+                <input type="number" min="0" step="0.01" [(ngModel)]="neto" (ngModelChange)="onNetoChange()">
+            </div>
+            
+<!-- Recorremos los impuestos disponibles para renderizarlos dinámicamente -->
+          <div *ngFor="let imp of impuestosDisponibles" class="form-group">
+            <label>{{ imp.nombre }} ({{ imp.porcentaje }}%)</label>
+            
+            <!-- Vinculamos el input con el diccionario de valores por ID -->
+            <input 
+              type="number" 
+              min="0" 
+              step="0.01" 
+              [(ngModel)]="impuestosValores[imp.id]" 
+              name="impuesto_{{ imp.id }}">
+          </div>
+
             <div><label>No gravado ($)</label><input type="number" min="0" step="0.01" [(ngModel)]="noGravado"></div>
             <div style="grid-column: span 2">
               <label>Total comprobante ($)</label>
@@ -70,11 +85,11 @@
             </app-buscador>
             <button type="button" class="btn-link" (click)="abrirModalProducto()">➕ Nuevo producto</button>
           </div>
-        <div>
-      <label>Cantidad</label>
-      <input type="number" min="1" [(ngModel)]="cantidadComp">
-    </div>
-  </div>
+          <div>
+            <label>Cantidad</label>
+            <input type="number" min="1" [(ngModel)]="cantidadComp">
+          </div>
+        </div>
 
         <div *ngIf="productoComp" style="margin-top:10px;">
           <div class="grid-2" style="margin-bottom:8px">
@@ -113,7 +128,6 @@
           <div class="total-box">Total productos: ${{ totalItemsComp | number:'1.2-2' }}</div>
         </div>
       </div>
-      
 
       <!-- NOTA DE DÉBITO / CRÉDITO -->
       <div class="card" *ngIf="tipoComp==='NOTA_DEBITO' || tipoComp==='NOTA_CREDITO'">
@@ -232,6 +246,7 @@
   (cerrar)="cerrarModalProducto()"
   (guardar)="guardarProducto($event)">
 </app-alta-rapida-modal>
+
 <app-alta-rapida-modal
   [visible]="modalProveedorVisible"
   titulo="Nuevo proveedor"

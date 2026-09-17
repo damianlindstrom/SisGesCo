@@ -1,0 +1,51 @@
+.sub-header-tabs { background:#fff; padding:10px 16px; border-bottom:1px solid #dadce0; }
+.tab-switcher { display:flex; gap:8px; }
+.tab-btn {
+  padding: 7px 16px; border-radius: 20px; border: 2px solid #0f9d58;
+  background: transparent; color: #0f9d58; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.tab-btn:hover { background: #e6f4ea; }
+.tab-btn.active { background: #0f9d58; color: white; }
+
+.container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+.card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.card h2 { font-size: 15px; font-weight: 600; color: #0f9d58; margin-bottom: 16px; border-bottom: 1px solid #e8eaed; padding-bottom: 8px; }
+
+label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #555; }
+input, select, textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid #dadce0; border-radius: 6px;
+  font-size: 14px; outline: none; transition: border 0.2s; background: white; box-sizing: border-box;
+}
+input:focus, select:focus { border-color: #0f9d58; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: end; }
+
+.checkbox-options { display: flex; gap: 20px; align-items: center; margin-top: 6px; }
+.checkbox-item { font-size: 13px; color: #555; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.checkbox-item input[type="checkbox"] { width: auto; accent-color: #0f9d58; cursor: pointer; }
+
+.items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.items-table th { background: #f1f3f4; padding: 8px 10px; text-align: left; font-weight: 600; color: #555; }
+.items-table td { padding: 8px 10px; border-bottom: 1px solid #f1f3f4; vertical-align: middle; }
+.table-responsive { overflow-x: auto; }
+
+.btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+.btn-primary { background: #0f9d58; color: white; }
+.btn-primary:hover { background: #0b7a43; }
+.btn-primary:disabled { background: #9aa0a6; cursor: not-allowed; }
+.btn-danger { background: #fce8e6; color: #c5221f; font-size: 12px; padding: 5px 10px; }
+
+.badge-estado { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.estado-credito { background: #e6f4ea; color: #137333; }
+.estado-pendiente { background: #fef3e2; color: #e8710a; }
+
+.empty-state { text-align: center; padding: 32px; color: #888; font-size: 14px; }
+
+@media (max-width: 768px) {
+  .container { margin: 12px auto; padding: 0 10px; }
+  .card { padding: 14px; margin-bottom: 12px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr !important; gap: 10px; }
+  input, select, .btn { font-size: 16px !important; min-height: 44px; }
+  .checkbox-options { flex-direction: column; align-items: flex-start; gap: 8px; }
+}

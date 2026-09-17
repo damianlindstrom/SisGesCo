@@ -1,0 +1,178 @@
+<div class="sub-header-tabs">
+  <div class="tab-switcher">
+    <button 
+      class="tab-btn" 
+      [class.active]="pestanaActiva === 'impuestos'" 
+      (click)="pestanaActiva = 'impuestos'">
+      ⚙️ Impuestos
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="pestanaActiva === 'formasPago'" 
+      (click)="pestanaActiva = 'formasPago'">
+      💳 Formas de Pago
+    </button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- SECCIÓN 1: IMPUESTOS -->
+  <div *ngIf="pestanaActiva === 'impuestos'">
+    <div class="card">
+        <h2>Nuevo Impuesto</h2>
+        <form (ngSubmit)="agregarImpuesto()">
+            <div class="grid-3">
+            <div>
+                <label>Nombre / Concepto</label>
+                <input type="text" [(ngModel)]="nuevoImpuesto.nombre" name="nombre" placeholder="Ej: IVA 21%, IIBB" required>
+            </div>
+            <div>
+                <label>Alícuota / %</label>
+                <input type="number" step="0.01" [(ngModel)]="nuevoImpuesto.porcentaje" name="porcentaje" required>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">+ Agregar Impuesto</button>
+            </div>
+            </div>
+
+            <!-- Rango de vigencia impositiva -->
+            <div class="grid-2" style="margin-top: 12px;">
+            <div>
+                <label>Vigencia Desde</label>
+                <input type="date" [(ngModel)]="nuevoImpuesto.fechaDesde" name="fechaDesde">
+            </div>
+            <div>
+                <label>Vigencia Hasta</label>
+                <input type="date" [(ngModel)]="nuevoImpuesto.fechaHasta" name="fechaHasta">
+            </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+            <label>Aplicar en:</label>
+            <div class="checkbox-options">
+                <label class="checkbox-item">
+                <input type="checkbox" [(ngModel)]="nuevoImpuesto.enCompras" name="enCompras"> Compras
+                </label>
+                <label class="checkbox-item">
+                <input type="checkbox" [(ngModel)]="nuevoImpuesto.enVentas" name="enVentas"> Ventas
+                </label>
+                <label class="checkbox-item">
+                <input type="checkbox" [(ngModel)]="nuevoImpuesto.enGastosVarios" name="enGastosVarios"> Gastos Varios
+                </label>
+            </div>
+            </div>
+        </form>
+        </div>
+
+        <div class="card">
+        <h2>Impuestos Registrados</h2>
+        <div class="table-responsive">
+            <table class="items-table">
+            <thead>
+                <tr>
+                <th>Nombre</th>
+                <th style="text-align: center;">%</th>
+                <th style="text-align: center;">Vigencia</th>
+                <th style="text-align: center;">Compras</th>
+                <th style="text-align: center;">Ventas</th>
+                <th style="text-align: center;">Gastos</th>
+                <th style="text-align: center;">Estado</th>
+                <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let imp of impuestos">
+                <td><strong>{{ imp.nombre }}</strong></td>
+                <td style="text-align: center;">{{ imp.porcentaje }}%</td>
+                <td style="text-align: center; font-size: 12px; color: #555;">
+                    {{ (imp.fechaDesde | date:'dd/MM/yyyy') || 'Inicio' }} — {{ (imp.fechaHasta | date:'dd/MM/yyyy') || 'Sin fin' }}
+                </td>
+                <td style="text-align: center;">
+                    <input type="checkbox" [checked]="imp.enCompras" (change)="toggleImpuestoCampo(imp, 'enCompras')">
+                </td>
+                <td style="text-align: center;">
+                    <input type="checkbox" [checked]="imp.enVentas" (change)="toggleImpuestoCampo(imp, 'enVentas')">
+                </td>
+                <td style="text-align: center;">
+                    <input type="checkbox" [checked]="imp.enGastosVarios" (change)="toggleImpuestoCampo(imp, 'enGastosVarios')">
+                </td>
+                <td style="text-align: center;">
+                    <span class="badge-estado" [class.estado-credito]="imp.activo" [class.estado-pendiente]="!imp.activo">
+                    {{ imp.activo ? 'Activo' : 'Inactivo' }}
+                    </span>
+                </td>
+                <td style="text-align: right;">
+                    <button class="btn btn-danger" (click)="eliminarImpuesto(imp.id)">Eliminar</button>
+                </td>
+                </tr>
+                <tr *ngIf="impuestos.length === 0">
+                <td colspan="8" class="empty-state">No hay impuestos registrados.</td>
+                </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: FORMAS DE PAGO -->
+  <div *ngIf="pestanaActiva === 'formasPago'">
+    <div class="card">
+      <h2>Nueva Forma de Pago</h2>
+      <form (ngSubmit)="agregarFormaPago()">
+        <div class="grid-3">
+          <div>
+            <label>Nombre</label>
+            <input type="text" [(ngModel)]="nuevaFormaPago.nombre" name="fpNombre" placeholder="Ej: Transferencia, Mercado Pago" required>
+          </div>
+          <div>
+            <label>Descripción / Detalles</label>
+            <input type="text" [(ngModel)]="nuevaFormaPago.descripcion" name="fpDesc" placeholder="Ej: CBU / Alias">
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">+ Agregar Forma de Pago</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Formas de Pago Registradas</h2>
+      <div class="table-responsive">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Forma de Pago</th>
+              <th>Descripción</th>
+              <th style="text-align: center;">Estado</th>
+              <th style="text-align: right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let fp of formasPago">
+              <td><strong>{{ fp.nombre }}</strong></td>
+              <td style="color: #888;">{{ fp.descripcion || '-' }}</td>
+              <td style="text-align: center;">
+                <button 
+                  class="badge-estado" 
+                  [class.estado-credito]="fp.activa" 
+                  [class.estado-pendiente]="!fp.activa"
+                  style="border: none; cursor: pointer;"
+                  (click)="toggleFormaPagoActiva(fp)">
+                  {{ fp.activa ? 'Activa' : 'Inactiva' }}
+                </button>
+              </td>
+              <td style="text-align: right;">
+                <button class="btn btn-danger" (click)="eliminarFormaPago(fp.id)">Eliminar</button>
+              </td>
+            </tr>
+            <tr *ngIf="formasPago.length === 0">
+              <td colspan="4" class="empty-state">No hay formas de pago registradas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>

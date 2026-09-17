@@ -5,6 +5,7 @@ import { ComprasComponent } from './pages/compras/compras.component';
 import { GastosVariosComponent } from './pages/gastos-varios/gastos-varios.component';
 import { ReportesComponent } from './pages/reportes/reportes.component';
 import { ProductosComponent } from './pages/productos/productos.component';
+import { ParametrosComponent } from './pages/parametros/parametros.component';
 
 // Rutas equivalentes a los "form=" de doGet en Codigo.gs:
 // index -> home, ventas, compras, gastos_varios -> gastos-varios, reportes
@@ -15,5 +16,6 @@ export const routes: Routes = [
   { path: 'gastos-varios', component: GastosVariosComponent },
   { path: 'reportes', component: ReportesComponent },
   { path: 'productos', component: ProductosComponent },
+  { path: 'parametros', component: ParametrosComponent },
   { path: '**', redirectTo: '' },
 ];
