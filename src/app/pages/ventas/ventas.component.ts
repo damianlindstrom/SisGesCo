@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BuscadorComponent } from '../../shared/buscador/buscador.component';
 import { AltaRapidaModalComponent } from '../../shared/alta-rapida-modal/alta-rapida-modal.component';
-import { CampoFormulario } from '../../shared/models/campo-formulario.model';
 import { ClientesService } from '../../core/clientes.service';
 import { CategoriasClienteService } from '../../core/categorias-cliente.service';
 import { ProductosService } from '../../core/productos.service';
@@ -18,6 +17,10 @@ import { MovimientoCC } from '../../core/models/movimiento-cc.model';
 
 type Pestana = 'venta' | 'cobro';
 type OrigenModalCliente = 'venta' | 'cobro';
+
+interface ClienteConCC extends Cliente {
+  cuentaCorriente?: boolean;
+}
 
 interface ItemVentaUI extends ItemVentaInput {
   productoNombre: string;
@@ -36,14 +39,14 @@ export class VentasComponent implements OnInit {
   cargando = true;
   mensaje: { tipo: 'ok' | 'error'; texto: string } | null = null;
 
-  clientes: Cliente[] = [];
+  clientes: ClienteConCC[] = [];
   categoriasCliente: CategoriaCliente[] = [];
   productos: Producto[] = [];
   
   formasPagoVenta: string[] = [];
   formasPagoCobro: string[] = [];
 
-  // --- Impuestos dinámicos ---
+  // --- Impuestos dinámicos y desgloses ---
   impuestosDisponibles: Array<Impuesto & { id: number }> = [];
   impuestosValores: Record<number, number> = {};
 
@@ -51,21 +54,25 @@ export class VentasComponent implements OnInit {
   modalClienteVisible = false;
   origenModalCliente: OrigenModalCliente = 'venta';
   guardandoCliente = false;
-  camposCliente: CampoFormulario[] = [];
+  camposCliente: any[] = [];
 
   // --- Sección Nueva Venta ---
-  compradorSeleccionado: Cliente | null = null;
+  compradorSeleccionado: ClienteConCC | null = null;
   productoSeleccionado: Producto | null = null;
   cantidad = 1;
   items: ItemVentaUI[] = [];
   formaPago = '';
   nroComprobante = '';
+  
   neto = 0;
+  iva = 0;
+  iibb = 0;
   noGravado = 0;
+  
   guardandoVenta = false;
 
   // --- Sección Cuenta Corriente ---
-  clienteCC: Cliente | null = null;
+  clienteCC: ClienteConCC | null = null;
   cargandoCC = false;
   historialCC: MovimientoCC[] = [];
   montoCobro: number | null = null;
@@ -73,8 +80,8 @@ export class VentasComponent implements OnInit {
   obsCobro = '';
   guardandoCobro = false;
 
-  tituloCliente = (c: Cliente) => c.nombre;
-  subtituloCliente = (c: Cliente) => c.categoriaNombre;
+  tituloCliente = (c: ClienteConCC) => c.nombre;
+  subtituloCliente = (c: ClienteConCC) => `${c.categoriaNombre} ${c.cuentaCorriente ? '💳 [Cta Cte]' : ''}`;
   tituloProducto = (p: Producto) => p.nombre;
 
   constructor(
@@ -94,9 +101,10 @@ export class VentasComponent implements OnInit {
         this.parametrosService.getImpuestos(),
         this.parametrosService.getFormasPago(),
       ]);
+
       this.clientes = cls;
       this.productos = prods;
-      this.categoriasCliente = cats;
+      this.categoriasCliente = cats.filter(c => c.nombre.toLowerCase() !== 'cliente con cuenta corriente');
 
       const formasActivas = listaFormasPago
         .filter(f => f.activa)
@@ -132,15 +140,16 @@ export class VentasComponent implements OnInit {
         requerido: true,
         opciones: this.categoriasCliente.map((c) => ({ value: c.id, label: c.nombre })),
       },
+      {
+        key: 'cuentaCorriente',
+        label: 'Habilitar Cuenta Corriente',
+        tipo: 'checkbox'
+      }
     ];
   }
 
   cambiarPestana(p: Pestana): void {
     this.pestana = p;
-  }
-
-  private hoyISO(): string {
-    return new Date().toISOString().slice(0, 10);
   }
 
   private mostrarMensaje(tipo: 'ok' | 'error', texto: string): void {
@@ -152,17 +161,22 @@ export class VentasComponent implements OnInit {
 
   get precioAplicar(): number | null {
     if (!this.productoSeleccionado || !this.compradorSeleccionado) return null;
-    return this.precioSegunCategoria(this.productoSeleccionado, this.compradorSeleccionado.categoriaNombre);
+    return this.precioSegunCliente(this.productoSeleccionado, this.compradorSeleccionado);
   }
 
-  private precioSegunCategoria(p: Producto, categoria: string): number {
-    if (categoria === 'Resp. Inscripto') return p.precioRespInsc;
-    if (categoria === 'Cliente con c/corriente') return p.precioCtaCte;
+  private precioSegunCliente(p: Producto, cliente: ClienteConCC): number {
+    if (cliente.cuentaCorriente) {
+      return p.precioCtaCte;
+    }
+    if (cliente.categoriaNombre === 'Resp. Inscripto') {
+      return p.precioRespInsc;
+    }
     return p.precioConsFinal;
   }
 
-  onCompradorSeleccionado(c: Cliente | null): void {
+  onCompradorSeleccionado(c: ClienteConCC | null): void {
     this.compradorSeleccionado = c;
+    this.recalcularNetoSegunItems();
   }
 
   onProductoSeleccionado(p: Producto | null): void {
@@ -194,16 +208,71 @@ export class VentasComponent implements OnInit {
   }
 
   private recalcularNetoSegunItems(): void {
-    this.neto = this.totalItems;
-  }
+    const totalBruto = this.totalItems;
 
-  get totalImpuestosDinamicos(): number {
-    return Object.values(this.impuestosValores).reduce((acc, val) => acc + (Number(val) || 0), 0);
+    if (!this.compradorSeleccionado) {
+      this.neto = totalBruto;
+      this.iva = 0;
+      this.iibb = 0;
+      Object.keys(this.impuestosValores).forEach(id => (this.impuestosValores[Number(id)] = 0));
+      return;
+    }
+
+    const categoria = this.compradorSeleccionado.categoriaNombre;
+
+    if (categoria === 'Resp. Inscripto') {
+      // Para Resp. Inscripto: el neto es igual al total de los ítems, y los impuestos se calculan y suman encima
+      this.neto = totalBruto;
+
+      this.impuestosDisponibles.forEach(imp => {
+        const alicuota = Number(imp.alicuota) || 0;
+        const montoImp = Math.round((this.neto * alicuota) * 100) / 100;
+
+        this.impuestosValores[imp.id] = montoImp;
+
+        const nombreLower = imp.nombre.toLowerCase();
+        if (nombreLower.includes('iva')) {
+          this.iva = montoImp;
+        } else if (nombreLower.includes('iibb') || nombreLower.includes('ingresos brutos')) {
+          this.iibb = montoImp;
+        }
+      });
+    } else {
+      // Para Monotributista / Consumidor Final: el precio ya incluye los impuestos (se desglosan)
+      const sumaAlicuotas = this.impuestosDisponibles.reduce((acc, imp) => acc + (Number(imp.alicuota) || 0), 0);
+
+      if (sumaAlicuotas > 0) {
+        const netoCalc = totalBruto / (1 + sumaAlicuotas);
+        this.neto = Math.round(netoCalc * 100) / 100;
+
+        this.impuestosDisponibles.forEach(imp => {
+          const alicuota = Number(imp.alicuota) || 0;
+          const montoImp = Math.round((this.neto * alicuota) * 100) / 100;
+
+          this.impuestosValores[imp.id] = montoImp;
+
+          const nombreLower = imp.nombre.toLowerCase();
+          if (nombreLower.includes('iva')) {
+            this.iva = montoImp;
+          } else if (nombreLower.includes('iibb') || nombreLower.includes('ingresos brutos')) {
+            this.iibb = montoImp;
+          }
+        });
+      } else {
+        this.neto = totalBruto;
+        this.iva = 0;
+        this.iibb = 0;
+        Object.keys(this.impuestosValores).forEach(id => (this.impuestosValores[Number(id)] = 0));
+      }
+    }
   }
 
   get totalVenta(): number {
-    const total = Number(this.neto) + Number(this.noGravado) + this.totalImpuestosDinamicos;
-    return Math.round(total * 100) / 100;
+    if (this.compradorSeleccionado?.categoriaNombre === 'Resp. Inscripto') {
+      const sumaImpuestos = Object.values(this.impuestosValores).reduce((acc, val) => acc + (Number(val) || 0), 0);
+      return Math.round((this.neto + sumaImpuestos) * 100) / 100;
+    }
+    return this.totalItems;
   }
 
   get puedeConfirmarVenta(): boolean {
@@ -218,14 +287,23 @@ export class VentasComponent implements OnInit {
         .filter(([_, monto]) => Number(monto) > 0)
         .map(([impuestoId, monto]) => ({ impuestoId: Number(impuestoId), monto: Number(monto) }));
 
+      this.impuestosDisponibles.forEach(imp => {
+        const alicuota = Number(imp.alicuota) || 0;
+        const baseCalculo = this.compradorSeleccionado?.categoriaNombre === 'Resp. Inscripto' ? this.neto : this.totalItems;
+        const montoImp = Math.round((baseCalculo * alicuota) * 100) / 100;
+        if (montoImp > 0 && !impuestosAplicados.some(i => i.impuestoId === imp.id)) {
+          impuestosAplicados.push({ impuestoId: imp.id, monto: montoImp });
+        }
+      });
+
       const payload: any = {
         clienteId: this.compradorSeleccionado.id,
         formaPago: this.formaPago,
         nroComprobante: this.nroComprobante.trim() || undefined,
         neto: Number(this.neto) || 0,
         noGravado: Number(this.noGravado) || 0,
-        iva: 0,
-        iibb: 0,
+        iva: Number(this.iva) || 0,
+        iibb: Number(this.iibb) || 0,
         impuestos: impuestosAplicados,
         items: this.items.map(({ productoId, cantidad, precioUnitario }) => ({ productoId, cantidad, precioUnitario })),
       };
@@ -246,13 +324,15 @@ export class VentasComponent implements OnInit {
     this.compradorSeleccionado = null;
     this.nroComprobante = '';
     this.neto = 0;
+    this.iva = 0;
+    this.iibb = 0;
     this.noGravado = 0;
     Object.keys(this.impuestosValores).forEach(id => (this.impuestosValores[Number(id)] = 0));
   }
 
   // ---------- Cuenta Corriente ----------
 
-  async onClienteCCSeleccionado(c: Cliente | null): Promise<void> {
+  async onClienteCCSeleccionado(c: ClienteConCC | null): Promise<void> {
     if (!c) {
       this.limpiarFormularioCC();
       return;
@@ -319,23 +399,26 @@ export class VentasComponent implements OnInit {
     this.modalClienteVisible = false;
   }
 
-  async guardarCliente(valores: Record<string, string>): Promise<void> {
+  async guardarCliente(valores: Record<string, any>): Promise<void> {
     this.guardandoCliente = true;
     try {
       const nuevoCliente = await this.clientesService.crear({
         nombre: valores['nombre'],
         dniCuit: valores['dniCuit'] || undefined,
         categoriaId: Number(valores['categoriaId']),
-      });
+        cuentaCorriente: Boolean(valores['cuentaCorriente']),
+      } as any) as ClienteConCC;
 
       const cat = this.categoriasCliente.find(c => c.id === nuevoCliente.categoriaId);
       if (cat) {
         nuevoCliente.categoriaNombre = cat.nombre;
       }
+      nuevoCliente.cuentaCorriente = Boolean(valores['cuentaCorriente']);
 
       this.clientes = [...this.clientes, nuevoCliente];
       if (this.origenModalCliente === 'venta') {
         this.compradorSeleccionado = nuevoCliente;
+        this.recalcularNetoSegunItems();
       } else {
         await this.onClienteCCSeleccionado(nuevoCliente);
       }

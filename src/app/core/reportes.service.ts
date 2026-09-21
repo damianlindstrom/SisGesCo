@@ -4,6 +4,11 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { ReporteImpositivo, ResultadoPeriodo } from './models/reportes.model';
 
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -17,14 +22,16 @@ export class ReportesService {
       .set('impuestoId', impuestoId.toString())
       .set('desde', desde)
       .set('hasta', hasta);
-    return await firstValueFrom(this.http.get<ReporteImpositivo>(`${this.apiUrl}/impositivo`, { params }));
+    const res = await firstValueFrom(this.http.get<ApiResponse<ReporteImpositivo>>(`${this.apiUrl}/impositivo`, { params }));
+    return res.data;
   }
 
   async resultadoPeriodo(desde: string, hasta: string): Promise<ResultadoPeriodo> {
     const params = new HttpParams()
       .set('desde', desde)
       .set('hasta', hasta);
-    return await firstValueFrom(this.http.get<ResultadoPeriodo>(`${this.apiUrl}/resultado-periodo`, { params }));
+    const res = await firstValueFrom(this.http.get<ApiResponse<ResultadoPeriodo>>(`${this.apiUrl}/resultado-periodo`, { params }));
+    return res.data;
   }
 
   async resumenFormaPago(formaPagoId: number | string, desde: string, hasta: string): Promise<any> {
@@ -32,6 +39,7 @@ export class ReportesService {
       .set('formaPagoId', formaPagoId.toString())
       .set('desde', desde)
       .set('hasta', hasta);
-    return await firstValueFrom(this.http.get<any>(`${this.apiUrl}/resumen-forma-pago`, { params }));
+    const res = await firstValueFrom(this.http.get<ApiResponse<any>>(`${this.apiUrl}/resumen-forma-pago`, { params }));
+    return res.data;
   }
 }

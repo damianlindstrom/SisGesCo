@@ -1,15 +1,12 @@
-// Los KPIs de ventas y el resto de los "reportes operativos" quedaron
-// afuera a propósito: son parte del plan pago que todavía no se
-// desarrolla (ver pestaña "Reportes Operativos"). Solo modelamos acá
-// el reporte impositivo, que sí se construye ahora.
-
 export interface MovimientoImpositivo {
   fecha: string;
-  origen: 'VENTA' | 'COMPRA';
-  concepto: string;      // ej: nro de comprobante, o "Venta a <cliente>"
-  contraparte: string;   // cliente o proveedor
+  origen: 'VENTA' | 'COMPRA' | 'GASTO';
+  concepto: string;
+  contraparte: string;
+  cuit?: string;
+  comprobante?: string;
   neto: number;
-  montoImpuesto: number; // el monto del impuesto consultado (IVA o IIBB) para ese movimiento
+  montoImpuesto: number;
 }
 
 export interface ReporteImpositivo {
@@ -44,6 +41,7 @@ export interface ResultadoPeriodo {
   compras: { total: number; detalle: CompraResumen[] };
   gastos: { total: number; detalle: GastoResumen[] };
   cmv: number;
+  totalImpuestosPeriodo: number;
   resultadoBruto: number;
   resultadoNeto: number;
 }

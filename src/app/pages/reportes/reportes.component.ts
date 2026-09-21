@@ -120,15 +120,17 @@ export class ReportesComponent implements OnInit {
 
   exportarCSVImpositivo(): void {
     if (!this.reporteImpositivo) return;
-    const encabezado = ['Fecha', 'Origen', 'Concepto', 'Contraparte', 'Neto', 'Impuesto'];
+    const encabezado = ['Fecha', 'Origen', 'Concepto', 'CUIT/CUIL', 'Comprobante', 'Contraparte', 'Neto', 'Impuesto'];
     const filas = this.reporteImpositivo.movimientos.map((m) => {
-      const esCompra = m.origen === 'COMPRA';
-      const signo = esCompra ? -1 : 1;
+      const esGastoOCompra = m.origen === 'COMPRA' || m.origen === 'GASTO';
+      const signo = esGastoOCompra ? -1 : 1;
       const fechaFormateada = new Date(m.fecha).toLocaleDateString('es-AR');
       return [
         fechaFormateada,
-        m.origen === 'VENTA' ? 'Venta' : 'Compra',
+        m.origen,
         m.concepto,
+        m.cuit || '',
+        m.comprobante || '',
         m.contraparte,
         (m.neto * signo).toFixed(2),
         (m.montoImpuesto * signo).toFixed(2),
@@ -190,5 +192,12 @@ export class ReportesComponent implements OnInit {
     a.download = nombreArchivo;
     a.click();
     URL.revokeObjectURL(url);
+  }
+  get cmvAjustado(): number {
+    if (!this.resultado) return 0;
+    // CMV original menos el total de impuestos acumulados del período
+    const totalImpuestosPeriodo = this.resultado.totalImpuestosPeriodo ?? 0; 
+    const cmvFinal = this.resultado.cmv - totalImpuestosPeriodo;
+    return cmvFinal >= 0 ? cmvFinal : 0;
   }
 }

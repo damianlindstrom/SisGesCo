@@ -41,51 +41,55 @@
         <div class="empty-state" *ngIf="!reporteImpositivo.movimientos.length">No hay movimientos de {{ reporteImpositivo.impuesto }} en el rango seleccionado.</div>
 
         <ng-container *ngIf="reporteImpositivo.movimientos.length">
-  <div class="table-responsive">
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Origen</th>
-          <th>Concepto</th>
-          <th>Contraparte</th>
-          <th>Neto</th>
-          <th>{{ reporteImpositivo.impuesto }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let m of reporteImpositivo.movimientos">
-          <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
-          <td>{{ m.origen === 'VENTA' ? 'Venta' : 'Compra' }}</td>
-          <td>{{ m.concepto }}</td>
-          <td>{{ m.contraparte }}</td>
-          <td [class.neg]="m.origen === 'COMPRA'">
-            {{ m.origen === 'COMPRA' ? '-' : '' }}${{ m.neto | number:'1.2-2' }}
-          </td>
-          <td [class.neg]="m.origen === 'COMPRA'">
-            {{ m.origen === 'COMPRA' ? '-' : '' }}${{ m.montoImpuesto | number:'1.2-2' }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+          <div class="table-responsive">
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Origen</th>
+                  <th>Concepto</th>
+                  <th>CUIT / CUIL</th>
+                  <th>Comprobante</th>
+                  <th>Contraparte</th>
+                  <th>Neto</th>
+                  <th>{{ reporteImpositivo.impuesto }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of reporteImpositivo.movimientos">
+                  <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ m.origen === 'VENTA' ? 'Venta' : (m.origen === 'COMPRA' ? 'Compra' : 'Gasto') }}</td>
+                  <td>{{ m.concepto }}</td>
+                  <td>{{ m.cuit || '—' }}</td>
+                  <td>{{ m.comprobante || '—' }}</td>
+                  <td>{{ m.contraparte }}</td>
+                  <td [class.neg]="m.origen === 'COMPRA' || m.origen === 'GASTO'">
+                    {{ (m.origen === 'COMPRA' || m.origen === 'GASTO') ? '-' : '' }}${{ m.neto | number:'1.2-2' }}
+                  </td>
+                  <td [class.neg]="m.origen === 'COMPRA' || m.origen === 'GASTO'">
+                    {{ (m.origen === 'COMPRA' || m.origen === 'GASTO') ? '-' : '' }}${{ m.montoImpuesto | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-  <div class="total-box">
-    <span>Neto: <strong>${{ totalNetoCalculado | number:'1.2-2' }}</strong></span>
-    &nbsp;·&nbsp;
-    <span>
-      {{ reporteImpositivo.impuesto }}
-      <small>({{ totalImpuestoCalculado < 0 ? 'Saldo a favor / Crédito' : 'A pagar / Débito' }})</small>:
-      <strong [class.pos]="totalImpuestoCalculado < 0" [class.neg]="totalImpuestoCalculado > 0">
-        ${{ totalImpuestoCalculado | number:'1.2-2' }}
-      </strong>
-    </span>
-  </div>
+          <div class="total-box">
+            <span>Neto: <strong>${{ totalNetoCalculado | number:'1.2-2' }}</strong></span>
+            &nbsp;·&nbsp;
+            <span>
+              {{ reporteImpositivo.impuesto }}
+              <small>({{ totalImpuestoCalculado < 0 ? 'Saldo a favor / Crédito' : 'A pagar / Débito' }})</small>:
+              <strong [class.pos]="totalImpuestoCalculado < 0" [class.neg]="totalImpuestoCalculado > 0">
+                ${{ totalImpuestoCalculado | number:'1.2-2' }}
+              </strong>
+            </span>
+          </div>
 
-  <div style="margin-top:12px; text-align:right">
-    <button type="button" class="btn btn-secondary" (click)="exportarCSVImpositivo()">⬇️ Exportar CSV</button>
-  </div>
-</ng-container>
+          <div style="margin-top:12px; text-align:right">
+            <button type="button" class="btn btn-secondary" (click)="exportarCSVImpositivo()">⬇️ Exportar CSV</button>
+          </div>
+        </ng-container>
       </div>
     </div>
 
@@ -124,12 +128,14 @@
             <span [class.pos]="resultado.resultadoBruto >= 0" [class.neg]="resultado.resultadoBruto < 0">${{ resultado.resultadoBruto | number:'1.2-2' }}</span>
           </div>
           <div class="resumen-linea">
-            <span>📦 CMV (costo de mercadería vendida)</span>
-            <span class="neg">− ${{ resultado.cmv | number:'1.2-2' }}</span>
+            <span>📦 CMV (ajustado con impuestos)</span>
+            <span class="neg">− ${{ cmvAjustado | number:'1.2-2' }}</span>
           </div>
           <div class="resumen-linea resultado final">
             <span>= Resultado neto</span>
-            <span [class.pos]="resultado.resultadoNeto >= 0" [class.neg]="resultado.resultadoNeto < 0">${{ resultado.resultadoNeto | number:'1.2-2' }}</span>
+            <span [class.pos]="(resultado.resultadoBruto - cmvAjustado) >= 0" [class.neg]="(resultado.resultadoBruto - cmvAjustado) < 0">
+              ${{ (resultado.resultadoBruto - cmvAjustado) | number:'1.2-2' }}
+            </span>
           </div>
         </div>
 
