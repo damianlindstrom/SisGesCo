@@ -11,11 +11,6 @@ const CLASIFICACIONES = [
   { valor: 'Otros', label: '⚙️ Otros' },
 ];
 
-const FORMAS_PAGO = [
-  'Efectivo', 'Transferencia', 'MercadoPago', 'Tarjeta de débito',
-  'Tarjeta de crédito', 'Cheque físico', 'Cheque diferido',
-];
-
 @Component({
   selector: 'app-gastos-varios',
   standalone: true,
@@ -25,14 +20,14 @@ const FORMAS_PAGO = [
 })
 export class GastosVariosComponent implements OnInit {
   clasificaciones = CLASIFICACIONES;
-  formasPago = FORMAS_PAGO;
+  formasPago: string[] = [];
 
   cargando = true;
   nombre = '';
   tipo = CLASIFICACIONES[0].valor;
   nroComprobante = '';
   descripcion = '';
-  formaPago = FORMAS_PAGO[0];
+  formaPago = '';
 
   // --- Desglose de importes e impuestos ---
   neto = 0;
@@ -50,11 +45,21 @@ export class GastosVariosComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const listaImpuestos = await this.parametrosService.getImpuestos();
+      const [listaImpuestos, listaFormasPago] = await Promise.all([
+        this.parametrosService.getImpuestos(),
+        this.parametrosService.getFormasPago(),
+      ]);
       
-      // Filtramos y normalizamos la alícuota/porcentaje igual que en compras
+      this.formasPago = listaFormasPago
+        .filter(f => f.activa)
+        .map(f => f.nombre);
+
+      if (this.formasPago.length > 0) {
+        this.formaPago = this.formasPago[0];
+      }
+
       this.impuestosDisponibles = listaImpuestos
-        .filter((i): i is Impuesto & { id: number } => i.activo === true && i.enGastos === true && typeof i.id === 'number')
+        .filter((i): i is Impuesto & { id: number } => i.activo === true && i.enGastosVarios === true && typeof i.id === 'number')
         .map(i => {
           const alic = i.alicuota ?? 0;
           return {
@@ -68,7 +73,7 @@ export class GastosVariosComponent implements OnInit {
         this.impuestosValores[imp.id] = 0;
       });
     } catch (e) {
-      this.mostrarMensaje('error', 'No se pudieron cargar los impuestos: ' + (e as Error).message);
+      this.mostrarMensaje('error', 'No se pudieron cargar los datos iniciales: ' + (e as Error).message);
     } finally {
       this.cargando = false;
     }
@@ -99,7 +104,6 @@ export class GastosVariosComponent implements OnInit {
       this.mostrarMensaje('error', 'El importe total del gasto debe ser mayor a 0.');
       return;
     }
-    
 
     this.guardando = true;
     try {
@@ -130,7 +134,8 @@ export class GastosVariosComponent implements OnInit {
       this.guardando = false;
     }
   }
-onNetoChange(): void {
+
+  onNetoChange(): void {
     const netoVal = Number(this.neto) || 0;
     const nuevosValores: Record<number, number> = {};
     
@@ -141,6 +146,7 @@ onNetoChange(): void {
 
     this.impuestosValores = nuevosValores;
   }
+
   private limpiarForm(): void {
     this.nombre = '';
     this.nroComprobante = '';
@@ -148,7 +154,7 @@ onNetoChange(): void {
     this.noGravado = 0;
     this.descripcion = '';
     this.tipo = CLASIFICACIONES[0].valor;
-    this.formaPago = FORMAS_PAGO[0];
+    this.formaPago = this.formasPago[0] || '';
     Object.keys(this.impuestosValores).forEach(id => (this.impuestosValores[Number(id)] = 0));
   }
 }

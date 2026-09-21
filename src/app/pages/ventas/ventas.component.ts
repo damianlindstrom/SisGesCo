@@ -25,12 +25,6 @@ interface ItemVentaUI extends ItemVentaInput {
   subtotal: number;
 }
 
-const FORMAS_PAGO_VENTA = [
-  'Efectivo', 'Transferencia', 'Tarjeta débito', 'Tarjeta crédito',
-  'Cuenta corriente', 'MercadoPago', 'Cheque Físico Diferido', 'E-cheq Diferido',
-];
-const FORMAS_PAGO_COBRO = FORMAS_PAGO_VENTA.filter(f => f !== 'Cuenta corriente');
-
 @Component({
   selector: 'app-ventas',
   standalone: true,
@@ -46,8 +40,9 @@ export class VentasComponent implements OnInit {
   clientes: Cliente[] = [];
   categoriasCliente: CategoriaCliente[] = [];
   productos: Producto[] = [];
-  formasPagoVenta = FORMAS_PAGO_VENTA;
-  formasPagoCobro = FORMAS_PAGO_COBRO;
+  
+  formasPagoVenta: string[] = [];
+  formasPagoCobro: string[] = [];
 
   // --- Impuestos dinámicos ---
   impuestosDisponibles: Array<Impuesto & { id: number }> = [];
@@ -99,15 +94,23 @@ export class VentasComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const [cls, prods, cats, listaImpuestos] = await Promise.all([
+      const [cls, prods, cats, listaImpuestos, listaFormasPago] = await Promise.all([
         this.clientesService.listar(),
         this.productosService.listar(),
         this.categoriasClienteService.listar(),
         this.parametrosService.getImpuestos(),
+        this.parametrosService.getFormasPago(),
       ]);
       this.clientes = cls;
       this.productos = prods;
       this.categoriasCliente = cats;
+
+      const formasActivas = listaFormasPago
+        .filter(f => f.activa)
+        .map(f => f.nombre);
+
+      this.formasPagoVenta = formasActivas;
+      this.formasPagoCobro = formasActivas.filter(f => f.toLowerCase() !== 'cuenta corriente');
 
       this.impuestosDisponibles = listaImpuestos.filter(
         (i): i is Impuesto & { id: number } => i.activo === true && i.enVentas === true && typeof i.id === 'number'

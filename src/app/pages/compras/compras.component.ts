@@ -10,7 +10,7 @@ import { ComprasService } from '../../core/compras.service';
 import { ParametrosService } from '../../core/parametros.service';
 import { Proveedor } from '../../core/models/proveedor.model';
 import { Producto } from '../../core/models/producto.model';
-import { Impuesto } from '../../core/models/parametros.model';
+import { Impuesto, FormaPago } from '../../core/models/parametros.model';
 import {
   ComprobanteCompra, ComprobanteCompraInput, ItemComprobanteInput, TipoComprobante,
 } from '../../core/models/comprobante-compra.model';
@@ -30,11 +30,6 @@ type Pestana = 'comprobantes' | 'pagos';
 interface ItemCompraUI extends ItemComprobanteInput {
   subtotal: number;
 }
-
-const FORMAS_PAGO = [
-  'Efectivo', 'Transferencia', 'Tarjeta débito', 'Tarjeta crédito',
-  'Cuenta corriente', 'MercadoPago', 'Cheque Físico Diferido', 'E-cheq Diferido',
-];
 
 const TIPOS: { valor: TipoComprobante; label: string }[] = [
   { valor: 'FACTURA_MERCADERIA', label: '🛒 Factura Mercadería' },
@@ -65,7 +60,7 @@ export class ComprasComponent implements OnInit {
   public impuestosDisponibles: Array<Impuesto & { id: number }> = [];
   public impuestosValores: Record<number, number> = {};
 
-  public formasPago = FORMAS_PAGO;
+  public formasPago: string[] = [];
   public tipos = TIPOS;
 
   // Modal alta rápida proveedor
@@ -135,15 +130,18 @@ export class ComprasComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const [provs, prods, listaImpuestos] = await Promise.all([
+      const [provs, prods, listaImpuestos, listaFormasPago] = await Promise.all([
         this.proveedoresService.listar(),
         this.productosService.listar(),
         this.parametrosService.getImpuestos(),
+        this.parametrosService.getFormasPago(),
       ]);
       this.proveedores = provs;
       this.productos = prods;
-      // 🔍 INSPECCIÓN TEMPORAL: Mirá en la consola del navegador (F12) qué llega acá
-      console.log('Impuestos totales desde la API:', listaImpuestos);
+      
+      this.formasPago = listaFormasPago
+        .filter(f => f.activa)
+        .map(f => f.nombre);
 
       this.impuestosDisponibles = listaImpuestos
         .filter((i): i is Impuesto & { id: number } => i.activo === true && i.enCompras === true && typeof i.id === 'number')
@@ -151,7 +149,7 @@ export class ComprasComponent implements OnInit {
           const alic = i.alicuota ?? 0;
           return {
             ...i,
-            id: i.id as number, // Aseguramos explícitamente que el ID es un número requerido
+            id: i.id as number,
             porcentaje: i.porcentaje ?? (alic > 1 ? alic : alic * 100)
           };
         });
@@ -162,12 +160,11 @@ export class ComprasComponent implements OnInit {
     }
   }
 
-onNetoChange(): void {
+  onNetoChange(): void {
     const netoVal = Number(this.neto) || 0;
     const nuevosValores: Record<number, number> = {};
     
     this.impuestosDisponibles.forEach(imp => {
-      // Tomamos 'porcentaje' (ya normalizado) o 'alicuota' como respaldo
       const alicuotaVal = imp.porcentaje ?? (imp as any).alicuota ?? 0; 
       nuevosValores[imp.id] = Math.round(netoVal * (alicuotaVal / 100) * 100) / 100;
     });
@@ -184,7 +181,6 @@ onNetoChange(): void {
     setTimeout(() => (this.mensaje = null), 4000);
   }
 
-  // Modal Proveedor
   abrirModalProveedor(origen: 'comprobante' | 'pago'): void {
     this.origenModalProveedor = origen;
     this.modalProveedorVisible = true;
@@ -217,7 +213,6 @@ onNetoChange(): void {
     }
   }
 
-  // Comprobantes
   onProveedorCompSeleccionado(p: Proveedor | null): void {
     this.proveedorComp = p;
   }
@@ -270,15 +265,12 @@ onNetoChange(): void {
     this.cantidadComp = 1;
     this.nuevoCosto = null;
 
-    // Actualizamos el neto automáticamente con el total de productos y recalculamos
     this.neto = this.totalItemsComp;
     this.onNetoChange();
   }
 
   quitarItemComp(i: number): void {
     this.itemsComp.splice(i, 1);
-    
-    // Actualizamos el neto automáticamente y recalculamos
     this.neto = this.totalItemsComp;
     this.onNetoChange();
   }
@@ -357,7 +349,6 @@ onNetoChange(): void {
     this.comprobantePadre = null;
   }
 
-  // Pagos
   async onProveedorPagoSeleccionado(p: Proveedor | null): Promise<void> {
     this.proveedorPago = p;
     this.comprobantesSeleccionados.clear();
