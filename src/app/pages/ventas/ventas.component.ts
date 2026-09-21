@@ -15,9 +15,8 @@ import { Producto } from '../../core/models/producto.model';
 import { Impuesto } from '../../core/models/parametros.model';
 import { ItemVentaInput } from '../../core/models/venta.model';
 import { MovimientoCC } from '../../core/models/movimiento-cc.model';
-import { ResumenArqueo } from '../../core/models/arqueo.model';
 
-type Pestana = 'venta' | 'cobro' | 'arqueo';
+type Pestana = 'venta' | 'cobro';
 type OrigenModalCliente = 'venta' | 'cobro';
 
 interface ItemVentaUI extends ItemVentaInput {
@@ -73,12 +72,6 @@ export class VentasComponent implements OnInit {
   formaPagoCobro = '';
   obsCobro = '';
   guardandoCobro = false;
-
-  // --- Sección Arqueo ---
-  desdeArqueo = this.hoyISO();
-  hastaArqueo = this.hoyISO();
-  cargandoArqueo = false;
-  arqueo: ResumenArqueo | null = null;
 
   tituloCliente = (c: Cliente) => c.nombre;
   subtituloCliente = (c: Cliente) => c.categoriaNombre;
@@ -312,20 +305,6 @@ export class VentasComponent implements OnInit {
     this.montoCobro = null;
     this.formaPagoCobro = '';
     this.obsCobro = '';
-  }
-
-  // ---------- Arqueo de Caja ----------
-
-  async consultarArqueo(): Promise<void> {
-    this.cargandoArqueo = true;
-    this.arqueo = null;
-    try {
-      this.arqueo = await this.ventasService.arqueo(this.desdeArqueo, this.hastaArqueo);
-    } catch (e) {
-      this.mostrarMensaje('error', 'No se pudo consultar el arqueo: ' + (e as Error).message);
-    } finally {
-      this.cargandoArqueo = false;
-    }
   }
 
   // ---------- Modal de alta rápida de cliente ----------

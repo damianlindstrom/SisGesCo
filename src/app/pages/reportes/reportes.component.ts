@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ImpuestosService } from '../../core/impuestos.service';
 import { ReportesService } from '../../core/reportes.service';
+import { ParametrosService } from '../../core/parametros.service';
 import { Impuesto } from '../../core/models/impuesto.model';
 import { ReporteImpositivo, ResultadoPeriodo } from '../../core/models/reportes.model';
 
-type Pestana = 'impuestos' | 'operativos' | 'personalizados';
+type Pestana = 'impuestos' | 'operativos' | 'formas-pago' | 'personalizados';
 
 @Component({
   selector: 'app-reportes',
@@ -28,23 +29,41 @@ export class ReportesComponent implements OnInit {
   consultandoImpuesto = false;
   reporteImpositivo: ReporteImpositivo | null = null;
 
-  // ---------- Reportes Operativos (resultado del período) ----------
+  // ---------- Reportes Operativos ----------
   desdeOperativo = this.primerDiaDelMesISO();
   hastaOperativo = this.hoyISO();
   consultandoOperativo = false;
   resultado: ResultadoPeriodo | null = null;
 
+  // ---------- Resumen Formas de Pago ----------
+  formasPago: Array<{ id?: string | number; nombre: string; activa: boolean }> = [];
+  formaPagoSeleccionadaId: number | string | null = null;
+  desdeFormaPago = this.hoyISO();
+  hastaFormaPago = this.hoyISO();
+  consultandoFormaPago = false;
+  resumenFormaPago: any = null;
+
   constructor(
     private impuestosService: ImpuestosService,
     private reportesService: ReportesService,
+    private parametrosService: ParametrosService,
   ) {}
 
   async ngOnInit(): Promise<void> {
     try {
-      this.impuestos = await this.impuestosService.listar();
+      const [listaImpuestos, listaFormasPago] = await Promise.all([
+        this.impuestosService.listar(),
+        this.parametrosService.getFormasPago(),
+      ]);
+      this.impuestos = listaImpuestos;
       this.impuestoSeleccionadoId = this.impuestos[0]?.id ?? null;
+
+      this.formasPago = listaFormasPago;
+      if (this.formasPago.length > 0) {
+        this.formaPagoSeleccionadaId = this.formasPago[0].id ?? null;
+      }
     } catch (e) {
-      this.mostrarMensaje('error', 'No se pudo cargar el catálogo de impuestos: ' + (e as Error).message);
+      this.mostrarMensaje('error', 'No se pudieron cargar los datos iniciales: ' + (e as Error).message);
     } finally {
       this.cargando = false;
     }
@@ -144,6 +163,21 @@ export class ReportesComponent implements OnInit {
       ['Resultado neto', '', this.resultado.resultadoNeto.toFixed(2)],
     ];
     this.descargarCSV(`resultado-periodo-${this.desdeOperativo}-a-${this.hastaOperativo}.csv`, encabezado, filas);
+  }
+
+  // ---------- Resumen Formas de Pago ----------
+
+  async consultarResumenFormaPago(): Promise<void> {
+    if (this.formaPagoSeleccionadaId === null || this.formaPagoSeleccionadaId === undefined) return;
+    this.consultandoFormaPago = true;
+    this.resumenFormaPago = null;
+    try {
+      this.resumenFormaPago = await this.reportesService.resumenFormaPago(this.formaPagoSeleccionadaId, this.desdeFormaPago, this.hastaFormaPago);
+    } catch (e) {
+      this.mostrarMensaje('error', 'No se pudo consultar el resumen de forma de pago: ' + (e as Error).message);
+    } finally {
+      this.consultandoFormaPago = false;
+    }
   }
 
   private descargarCSV(nombreArchivo: string, encabezado: string[], filas: string[][]): void {

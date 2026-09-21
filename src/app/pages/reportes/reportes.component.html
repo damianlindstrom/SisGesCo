@@ -2,6 +2,7 @@
   <div class="tab-switcher">
     <button type="button" class="tab-btn" [class.active]="pestana==='impuestos'" (click)="cambiarPestana('impuestos')">🧾 Impuestos</button>
     <button type="button" class="tab-btn" [class.active]="pestana==='operativos'" (click)="cambiarPestana('operativos')">📈 Reportes Operativos</button>
+    <button type="button" class="tab-btn" [class.active]="pestana==='formas-pago'" (click)="cambiarPestana('formas-pago')">💳 Resumen — Formas de Pago</button>
     <button type="button" class="tab-btn" [class.active]="pestana==='personalizados'" (click)="cambiarPestana('personalizados')">🛠️ Reportes Personalizados</button>
   </div>
 </div>
@@ -170,6 +171,79 @@
 
         <div style="text-align:right; margin-bottom:24px">
           <button type="button" class="btn btn-secondary" (click)="exportarCSVResultado()">⬇️ Exportar CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ RESUMEN — FORMAS DE PAGO ============ -->
+    <div *ngIf="pestana==='formas-pago'">
+      <div class="card">
+        <h2>1. Seleccionar Forma de Pago y Rango</h2>
+        <div class="grid-3">
+          <div>
+            <label>Forma de Pago *</label>
+            <select [(ngModel)]="formaPagoSeleccionadaId">
+              <option value="" disabled>— Seleccioná —</option>
+              <option *ngFor="let f of formasPago" [value]="f.id">
+                {{ f.nombre }} {{ f.activa ? '' : '(Inactiva)' }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label>Desde</label>
+            <input type="date" [(ngModel)]="desdeFormaPago">
+          </div>
+          <div>
+            <label>Hasta</label>
+            <input type="date" [(ngModel)]="hastaFormaPago">
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <button type="button" class="btn btn-primary" [disabled]="!formaPagoSeleccionadaId || consultandoFormaPago" (click)="consultarResumenFormaPago()">
+            {{ consultandoFormaPago ? 'Consultando...' : '🔄 Consultar Movimientos' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="consultandoFormaPago">Procesando movimientos de la forma de pago...</div>
+
+      <div *ngIf="resumenFormaPago && !consultandoFormaPago">
+        <div class="card">
+          <h2>2. Resumen</h2>
+          <div class="saldo-card-box">
+            <div class="saldo-box">
+              <div class="lbl">Total Movimientos</div>
+              <div class="val" [class.pos]="resumenFormaPago.totalGeneral >= 0" [class.neg]="resumenFormaPago.totalGeneral < 0">
+                ${{ resumenFormaPago.totalGeneral | number:'1.2-2' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>3. Detalle de Movimientos</h2>
+          <div class="table-responsive">
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Concepto</th>
+                  <th>Tipo</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of resumenFormaPago.movimientos">
+                  <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ m.concepto }}</td>
+                  <td>{{ m.tipo }}</td>
+                  <td [class.pos]="m.monto > 0" [class.neg]="m.monto < 0">
+                    ${{ m.monto | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

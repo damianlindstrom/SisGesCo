@@ -2,7 +2,6 @@
   <div class="tab-switcher">
     <button type="button" class="tab-btn" [class.active]="pestana==='venta'" (click)="cambiarPestana('venta')">🛒 Nueva Venta</button>
     <button type="button" class="tab-btn" [class.active]="pestana==='cobro'" (click)="cambiarPestana('cobro')">💵 Cuenta Corriente</button>
-    <button type="button" class="tab-btn" [class.active]="pestana==='arqueo'" (click)="cambiarPestana('arqueo')">📊 Arqueo de Caja</button>
   </div>
 </div>
 
@@ -252,66 +251,6 @@
                   <td>{{ m.debe ? ('$' + (m.debe | number:'1.2-2')) : '' }}</td>
                   <td>{{ m.haber ? ('$' + (m.haber | number:'1.2-2')) : '' }}</td>
                   <td>${{ m.saldoAcumulado | number:'1.2-2' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============ ARQUEO DE CAJA ============ -->
-    <div class="section" [class.visible]="pestana==='arqueo'" *ngIf="pestana==='arqueo'">
-      <div class="card">
-        <h2>1. Seleccionar Rango de Fechas</h2>
-        <div class="grid-3">
-          <div>
-            <label>Desde</label>
-            <input type="date" [(ngModel)]="desdeArqueo">
-          </div>
-          <div>
-            <label>Hasta</label>
-            <input type="date" [(ngModel)]="hastaArqueo">
-          </div>
-          <button type="button" class="btn btn-primary" style="align-self:end" (click)="consultarArqueo()">🔄 Consultar Movimientos</button>
-        </div>
-      </div>
-
-      <div class="loading" *ngIf="cargandoArqueo">Procesando Ingresos y Egresos de Cajas/Bancos...</div>
-
-      <div *ngIf="arqueo && !cargandoArqueo">
-        <div class="card">
-          <h2>2. Resumen</h2>
-          <div class="saldo-card-box">
-            <div class="saldo-box">
-              <div class="lbl">Ingresos</div>
-              <div class="val favor">${{ arqueo.totalIngresos | number:'1.2-2' }}</div>
-            </div>
-            <div class="saldo-box">
-              <div class="lbl">Egresos</div>
-              <div class="val deuda">${{ arqueo.totalEgresos | number:'1.2-2' }}</div>
-            </div>
-            <div class="saldo-box">
-              <div class="lbl">Saldo Neto</div>
-              <div class="val neutro">${{ arqueo.saldoNeto | number:'1.2-2' }}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>3. Movimientos</h2>
-          <div class="table-responsive">
-            <table class="items-table">
-              <thead>
-                <tr><th>Fecha</th><th>Concepto</th><th>Forma de pago</th><th>Ingreso</th><th>Egreso</th></tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let m of arqueo.movimientos">
-                  <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
-                  <td>{{ m.concepto }}</td>
-                  <td>{{ m.formaPago }}</td>
-                  <td>{{ m.ingreso ? ('$' + (m.ingreso | number:'1.2-2')) : '' }}</td>
-                  <td>{{ m.egreso ? ('$' + (m.egreso | number:'1.2-2')) : '' }}</td>
                 </tr>
               </tbody>
             </table>
