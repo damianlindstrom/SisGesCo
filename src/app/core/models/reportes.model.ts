@@ -45,3 +45,45 @@ export interface ResultadoPeriodo {
   resultadoBruto: number;
   resultadoNeto: number;
 }
+
+export interface MovimientoGeneral {
+  fecha: string;
+  modulo: 'VENTAS' | 'COMPRAS' | 'GASTOS';
+  concepto: string;
+  contraparte?: string;
+  comprobante?: string;
+  formaPago?: string;
+  neto?: number;
+  iva?: number;
+  iibb?: number;
+  impuestosMonto?: number;
+  monto: number;
+}
+
+// ===== NUEVAS INTERFACES =====
+export interface Proveedor {
+  id: number;
+  nombre: string;
+  cuit?: string | null;
+  categoria?: string | null;
+  activo: boolean;
+}
+
+export interface Cliente {
+  id: number;
+  nombre: string;
+  dniCuit?: string | null;
+  categoriaId: number;
+  categoriaNombre?: string;
+  cuentaCorriente: boolean;
+  activo: boolean;
+}
+
+export interface CampoFormulario {
+  key: string;
+  label: string;
+  tipo: 'text' | 'number' | 'select' | 'checkbox';
+  requerido?: boolean;
+  placeholder?: string;
+  opciones?: Array<{ value: string | number; label: string }>;
+}

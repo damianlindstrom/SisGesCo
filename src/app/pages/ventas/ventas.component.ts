@@ -102,7 +102,7 @@ export class VentasComponent implements OnInit {
         this.parametrosService.getFormasPago(),
       ]);
 
-      this.clientes = cls;
+      this.clientes = cls as ClienteConCC[];
       this.productos = prods;
       this.categoriasCliente = cats.filter(c => c.nombre.toLowerCase() !== 'cliente con cuenta corriente');
 
@@ -221,7 +221,6 @@ export class VentasComponent implements OnInit {
     const categoria = this.compradorSeleccionado.categoriaNombre;
 
     if (categoria === 'Resp. Inscripto') {
-      // Para Resp. Inscripto: el neto es igual al total de los ítems, y los impuestos se calculan y suman encima
       this.neto = totalBruto;
 
       this.impuestosDisponibles.forEach(imp => {
@@ -238,7 +237,6 @@ export class VentasComponent implements OnInit {
         }
       });
     } else {
-      // Para Monotributista / Consumidor Final: el precio ya incluye los impuestos (se desglosan)
       const sumaAlicuotas = this.impuestosDisponibles.reduce((acc, imp) => acc + (Number(imp.alicuota) || 0), 0);
 
       if (sumaAlicuotas > 0) {

@@ -2,7 +2,9 @@
   <div class="tab-switcher">
     <button type="button" class="tab-btn" [class.active]="pestana==='impuestos'" (click)="cambiarPestana('impuestos')">🧾 Impuestos</button>
     <button type="button" class="tab-btn" [class.active]="pestana==='operativos'" (click)="cambiarPestana('operativos')">📈 Reportes Operativos</button>
+    <button type="button" class="tab-btn" [class.active]="pestana==='movimientos'" (click)="cambiarPestana('movimientos')">📋 Movimientos</button>
     <button type="button" class="tab-btn" [class.active]="pestana==='formas-pago'" (click)="cambiarPestana('formas-pago')">💳 Resumen — Formas de Pago</button>
+    <button type="button" class="tab-btn" [class.active]="pestana==='clientes-proveedores'" (click)="cambiarPestana('clientes-proveedores')">👥 Clientes / Proveedores</button>
     <button type="button" class="tab-btn" [class.active]="pestana==='personalizados'" (click)="cambiarPestana('personalizados')">🛠️ Reportes Personalizados</button>
   </div>
 </div>
@@ -93,7 +95,7 @@
       </div>
     </div>
 
-    <!-- ============ REPORTES OPERATIVOS: RESULTADO DEL PERÍODO ============ -->
+    <!-- ============ REPORTES OPERATIVOS ============ -->
     <div *ngIf="pestana==='operativos'">
       <div class="card">
         <h2>1. Resultado del período</h2>
@@ -176,7 +178,81 @@
         </div>
 
         <div style="text-align:right; margin-bottom:24px">
-          <button type="button" class="btn btn-secondary" (click)="exportarCSVResultado()">⬇️ Exportar CSV</button>
+          <button type="button" class="btn btn-secondary" (click)="exportarCSVResultado()">⬇️ Exportar CSV Resultado</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PESTAÑA: MOVIMIENTOS GENERALES ============ -->
+    <div *ngIf="pestana==='movimientos'">
+      <div class="card">
+        <h2>1. Historial de Movimientos</h2>
+        <div class="grid-3">
+          <div>
+            <label>Módulo</label>
+            <select [(ngModel)]="moduloMovimientos">
+              <option value="TODOS">Todos los módulos</option>
+              <option value="VENTAS">Ventas</option>
+              <option value="COMPRAS">Compras</option>
+              <option value="GASTOS">Gastos Varios</option>
+            </select>
+          </div>
+          <div><label>Desde</label><input type="date" [(ngModel)]="desdeMovimientos"></div>
+          <div><label>Hasta</label><input type="date" [(ngModel)]="hastaMovimientos"></div>
+        </div>
+        <div style="margin-top:14px">
+          <button type="button" class="btn btn-primary" [disabled]="consultandoMovimientos" (click)="consultarMovimientos()">
+            {{ consultandoMovimientos ? 'Consultando...' : '🔍 Consultar Movimientos' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="consultandoMovimientos">Procesando historial de movimientos...</div>
+
+      <div class="card" *ngIf="listaMovimientos.length && !consultandoMovimientos">
+        <h2>2. Detalle de Movimientos</h2>
+        <div class="table-responsive">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Módulo</th>
+                <th>Concepto</th>
+                <th>Contraparte</th>
+                <th>Comprobante</th>
+                <th>Forma de Pago</th>
+                <th>Neto</th>
+                <th>IVA</th>
+                <th>IIBB</th>
+                <th>Monto Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of listaMovimientos">
+                <td>{{ m.fecha | date:'dd/MM/yyyy' }}</td>
+                <td><strong>{{ m.modulo }}</strong></td>
+                <td>{{ m.concepto }}</td>
+                <td>{{ m.contraparte || '—' }}</td>
+                <td>{{ m.comprobante || '—' }}</td>
+                <td>{{ m.formaPago || '—' }}</td>
+                <td [class.pos]="(m.neto ?? 0) > 0" [class.neg]="(m.neto ?? 0) < 0">
+                  {{ (m.neto ?? 0) < 0 ? '-' : '' }}${{ ((m.neto ?? 0) < 0 ? -(m.neto ?? 0) : (m.neto ?? 0)) | number:'1.2-2' }}
+                </td>
+                <td [class.pos]="(m.iva ?? 0) > 0" [class.neg]="(m.iva ?? 0) < 0">
+                  {{ (m.iva ?? 0) < 0 ? '-' : '' }}${{ ((m.iva ?? 0) < 0 ? -(m.iva ?? 0) : (m.iva ?? 0)) | number:'1.2-2' }}
+                </td>
+                <td [class.pos]="(m.iibb ?? 0) > 0" [class.neg]="(m.iibb ?? 0) < 0">
+                  {{ (m.iibb ?? 0) < 0 ? '-' : '' }}${{ ((m.iibb ?? 0) < 0 ? -(m.iibb ?? 0) : (m.iibb ?? 0)) | number:'1.2-2' }}
+                </td>
+                <td [class.pos]="m.monto > 0" [class.neg]="m.monto < 0">
+                  {{ m.monto < 0 ? '-' : '' }}${{ (m.monto < 0 ? -m.monto : m.monto) | number:'1.2-2' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="text-align:right; margin-top:16px">
+          <button type="button" class="btn btn-secondary" (click)="exportarCSVMovimientos()">⬇️ Exportar CSV Movimientos</button>
         </div>
       </div>
     </div>
@@ -254,6 +330,124 @@
       </div>
     </div>
 
+    <!-- ============ PESTAÑA: CLIENTES / PROVEEDORES ============ -->
+    <div *ngIf="pestana==='clientes-proveedores'">
+      <div class="card">
+        <h2>1. Gestión de Entidades</h2>
+        <div class="grid-3" style="align-items: flex-end;">
+          <div>
+            <label>Tipo de Entidad</label>
+            <select [(ngModel)]="tipoEntidad" (change)="alCambiarTipoEntidad()">
+              <option value="PROVEEDORES">📦 Proveedores</option>
+              <option value="CLIENTES">👤 Clientes</option>
+            </select>
+          </div>
+          <div>
+            <label>Filtro de Estado</label>
+            <select [(ngModel)]="filtroSoloActivosEntidad" (change)="consultarEntidades()">
+              <option [ngValue]="false">Todos (Activos e Inactivos)</option>
+              <option [ngValue]="true">Solo Activos</option>
+            </select>
+          </div>
+          <div>
+            <button type="button" class="btn btn-primary" (click)="abrirModalAltaEntidad()">
+              ➕ Nuevo {{ tipoEntidad === 'PROVEEDORES' ? 'Proveedor' : 'Cliente' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="loading" *ngIf="consultandoEntidades">Procesando {{ tipoEntidad.toLowerCase() }}...</div>
+
+      <!-- TABLA PROVEEDORES -->
+      <div class="card" *ngIf="!consultandoEntidades && tipoEntidad === 'PROVEEDORES'">
+        <h2>2. Detalle de Proveedores ({{ listaProveedores.length }})</h2>
+        <div class="empty-state" *ngIf="!listaProveedores.length">No se encontraron proveedores.</div>
+
+        <div class="table-responsive" *ngIf="listaProveedores.length">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre / Razón Social</th>
+                <th>CUIT</th>
+                <th>Categoría</th>
+                <th>Estado</th>
+                <th style="text-align: center;">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of listaProveedores">
+                <td><strong>#{{ p.id }}</strong></td>
+                <td>{{ p.nombre }}</td>
+                <td>{{ p.cuit || '—' }}</td>
+                <td>{{ p.categoria || '—' }}</td>
+                <td>
+                  <span [class.pos]="p.activo" [class.neg]="!p.activo">
+                    {{ p.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td style="text-align: center;">
+                  <button 
+                    type="button" 
+                    class="btn btn-secondary" 
+                    style="padding: 4px 8px; font-size: 0.85rem;"
+                    (click)="toggleEstadoProveedor(p)">
+                    {{ p.activo ? '🚫 Desactivar' : '✅ Activar' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TABLA CLIENTES -->
+      <div class="card" *ngIf="!consultandoEntidades && tipoEntidad === 'CLIENTES'">
+        <h2>2. Detalle de Clientes ({{ listaClientes.length }})</h2>
+        <div class="empty-state" *ngIf="!listaClientes.length">No se encontraron clientes.</div>
+
+        <div class="table-responsive" *ngIf="listaClientes.length">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre / Razón Social</th>
+                <th>DNI / CUIT</th>
+                <th>Categoría</th>
+                <th>Cta. Corriente</th>
+                <th>Estado</th>
+                <th style="text-align: center;">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of listaClientes">
+                <td><strong>#{{ c.id }}</strong></td>
+                <td>{{ c.nombre }}</td>
+                <td>{{ c.dniCuit || '—' }}</td>
+                <td>{{ c.categoriaNombre || '—' }}</td>
+                <td>{{ c.cuentaCorriente ? 'Sí' : 'No' }}</td>
+                <td>
+                  <span [class.pos]="c.activo" [class.neg]="!c.activo">
+                    {{ c.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td style="text-align: center;">
+                  <button 
+                    type="button" 
+                    class="btn btn-secondary" 
+                    style="padding: 4px 8px; font-size: 0.85rem;"
+                    (click)="toggleEstadoCliente(c)">
+                    {{ c.activo ? '🚫 Desactivar' : '✅ Activar' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ============ REPORTES PERSONALIZADOS ============ -->
     <div *ngIf="pestana==='personalizados'">
       <div class="card operativos-card">
@@ -266,3 +460,13 @@
 
   </div>
 </div>
+
+<!-- ============ MODAL ALTA RÁPIDA ============ -->
+<app-alta-rapida-modal
+  [visible]="modalEntidadVisible"
+  [titulo]="tituloModalEntidad"
+  [campos]="camposModalEntidad"
+  [guardando]="guardandoEntidad"
+  (cerrar)="cerrarModalEntidad()"
+  (guardar)="guardarNuevaEntidad($event)">
+</app-alta-rapida-modal>

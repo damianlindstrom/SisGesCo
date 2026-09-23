@@ -4,15 +4,25 @@ import { FormsModule } from '@angular/forms';
 import { ImpuestosService } from '../../core/impuestos.service';
 import { ReportesService } from '../../core/reportes.service';
 import { ParametrosService } from '../../core/parametros.service';
+import { ProveedoresService } from '../../core/proveedores.service';
+import { ClientesService } from '../../core/clientes.service';
+import { AltaRapidaModalComponent } from '../../shared/alta-rapida-modal/alta-rapida-modal.component';
+import { CampoFormulario } from '../../shared/models/campo-formulario.model';
 import { Impuesto } from '../../core/models/impuesto.model';
-import { ReporteImpositivo, ResultadoPeriodo } from '../../core/models/reportes.model';
+import { 
+  MovimientoGeneral, 
+  ReporteImpositivo, 
+  ResultadoPeriodo, 
+  Proveedor, 
+  Cliente 
+} from '../../core/models/reportes.model';
 
-type Pestana = 'impuestos' | 'operativos' | 'formas-pago' | 'personalizados';
+type Pestana = 'impuestos' | 'operativos' | 'movimientos' | 'formas-pago' | 'clientes-proveedores' | 'personalizados';
 
 @Component({
   selector: 'app-reportes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AltaRapidaModalComponent],
   templateUrl: './reportes.component.html',
   styleUrl: './reportes.component.css'
 })
@@ -35,6 +45,13 @@ export class ReportesComponent implements OnInit {
   consultandoOperativo = false;
   resultado: ResultadoPeriodo | null = null;
 
+  // ---------- Movimientos Generales ----------
+  desdeMovimientos = this.primerDiaDelMesISO();
+  hastaMovimientos = this.hoyISO();
+  moduloMovimientos = 'TODOS';
+  consultandoMovimientos = false;
+  listaMovimientos: MovimientoGeneral[] = [];
+
   // ---------- Resumen Formas de Pago ----------
   formasPago: Array<{ id?: string | number; nombre: string; activa: boolean }> = [];
   formaPagoSeleccionadaId: number | string | null = null;
@@ -43,10 +60,26 @@ export class ReportesComponent implements OnInit {
   consultandoFormaPago = false;
   resumenFormaPago: any = null;
 
+  // ---------- Clientes / Proveedores ----------
+  tipoEntidad: 'PROVEEDORES' | 'CLIENTES' = 'PROVEEDORES';
+  filtroSoloActivosEntidad = false;
+  consultandoEntidades = false;
+  listaProveedores: Proveedor[] = [];
+  listaClientes: Cliente[] = [];
+  categoriasCliente: Array<{ id: number; nombre: string }> = [];
+
+  // Modal Alta Rápida Entidad
+  modalEntidadVisible = false;
+  tituloModalEntidad = '';
+  camposModalEntidad: CampoFormulario[] = [];
+  guardandoEntidad = false;
+
   constructor(
     private impuestosService: ImpuestosService,
     private reportesService: ReportesService,
     private parametrosService: ParametrosService,
+    private proveedoresService: ProveedoresService,
+    private clientesService: ClientesService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -62,6 +95,12 @@ export class ReportesComponent implements OnInit {
       if (this.formasPago.length > 0) {
         this.formaPagoSeleccionadaId = this.formasPago[0].id ?? null;
       }
+
+      try {
+        this.categoriasCliente = await this.clientesService.listarCategorias();
+      } catch {
+        this.categoriasCliente = [];
+      }
     } catch (e) {
       this.mostrarMensaje('error', 'No se pudieron cargar los datos iniciales: ' + (e as Error).message);
     } finally {
@@ -71,6 +110,9 @@ export class ReportesComponent implements OnInit {
 
   cambiarPestana(p: Pestana): void {
     this.pestana = p;
+    if (p === 'clientes-proveedores' && !this.listaProveedores.length && !this.listaClientes.length) {
+      this.consultarEntidades();
+    }
   }
 
   private hoyISO(): string {
@@ -167,6 +209,66 @@ export class ReportesComponent implements OnInit {
     this.descargarCSV(`resultado-periodo-${this.desdeOperativo}-a-${this.hastaOperativo}.csv`, encabezado, filas);
   }
 
+  get cmvAjustado(): number {
+    if (!this.resultado) return 0;
+    const totalImpuestosPeriodo = this.resultado.totalImpuestosPeriodo ?? 0; 
+    const cmvFinal = this.resultado.cmv - totalImpuestosPeriodo;
+    return cmvFinal >= 0 ? cmvFinal : 0;
+  }
+
+  // ---------- Movimientos Generales ----------
+
+  async consultarMovimientos(): Promise<void> {
+    this.consultandoMovimientos = true;
+    this.listaMovimientos = [];
+    try {
+      this.listaMovimientos = await this.reportesService.movimientos(
+        this.desdeMovimientos,
+        this.hastaMovimientos,
+        this.moduloMovimientos
+      );
+    } catch (e) {
+      this.mostrarMensaje('error', 'No se pudieron consultar los movimientos: ' + (e as Error).message);
+    } finally {
+      this.consultandoMovimientos = false;
+    }
+  }
+
+  exportarCSVMovimientos(): void {
+    if (!this.listaMovimientos.length) return;
+    const encabezado = [
+      'Fecha',
+      'Módulo',
+      'Concepto',
+      'Contraparte',
+      'Comprobante',
+      'Forma de Pago',
+      'Neto',
+      'IVA',
+      'IIBB',
+      'Monto Total'
+    ];
+    const filas = this.listaMovimientos.map((m) => {
+      const fechaFormateada = new Date(m.fecha).toLocaleDateString('es-AR');
+      const neto = m.neto ?? 0;
+      const iva = m.iva ?? 0;
+      const iibb = m.iibb ?? 0;
+      return [
+        fechaFormateada,
+        m.modulo,
+        m.concepto || '',
+        m.contraparte || '',
+        m.comprobante || '',
+        m.formaPago || '',
+        neto.toFixed(2),
+        iva.toFixed(2),
+        iibb.toFixed(2),
+        m.monto.toFixed(2),
+      ];
+    });
+    this.descargarCSV(`movimientos-${this.moduloMovimientos.toLowerCase()}-${this.desdeMovimientos}-a-${this.hastaMovimientos}.csv`, encabezado, filas);
+  }
+
   // ---------- Resumen Formas de Pago ----------
 
   async consultarResumenFormaPago(): Promise<void> {
@@ -182,6 +284,117 @@ export class ReportesComponent implements OnInit {
     }
   }
 
+  // ---------- Clientes / Proveedores ----------
+
+  alCambiarTipoEntidad(): void {
+    this.consultarEntidades();
+  }
+
+  async consultarEntidades(): Promise<void> {
+    this.consultandoEntidades = true;
+    try {
+      if (this.tipoEntidad === 'PROVEEDORES') {
+        this.listaProveedores = await this.proveedoresService.listar(this.filtroSoloActivosEntidad);
+      } else {
+        this.listaClientes = await this.clientesService.listar(this.filtroSoloActivosEntidad);
+      }
+    } catch (e) {
+      this.mostrarMensaje('error', `No se pudo obtener la lista de ${this.tipoEntidad.toLowerCase()}: ` + (e as Error).message);
+    } finally {
+      this.consultandoEntidades = false;
+    }
+  }
+
+  async toggleEstadoProveedor(p: Proveedor): Promise<void> {
+    try {
+      const nuevoEstado = !p.activo;
+      await this.proveedoresService.actualizar(p.id, { activo: nuevoEstado });
+      p.activo = nuevoEstado;
+      this.mostrarMensaje('ok', `Proveedor "${p.nombre}" ${nuevoEstado ? 'activado' : 'desactivado'} con éxito.`);
+      if (this.filtroSoloActivosEntidad) {
+        this.consultarEntidades();
+      }
+    } catch (e) {
+      this.mostrarMensaje('error', 'No se pudo cambiar el estado: ' + (e as Error).message);
+    }
+  }
+
+  async toggleEstadoCliente(c: Cliente): Promise<void> {
+    try {
+      const nuevoEstado = !c.activo;
+      await this.clientesService.actualizar(c.id, { activo: nuevoEstado });
+      c.activo = nuevoEstado;
+      this.mostrarMensaje('ok', `Cliente "${c.nombre}" ${nuevoEstado ? 'activado' : 'desactivado'} con éxito.`);
+      if (this.filtroSoloActivosEntidad) {
+        this.consultarEntidades();
+      }
+    } catch (e) {
+      this.mostrarMensaje('error', 'No se pudo cambiar el estado: ' + (e as Error).message);
+    }
+  }
+
+  abrirModalAltaEntidad(): void {
+    if (this.tipoEntidad === 'PROVEEDORES') {
+      this.tituloModalEntidad = 'Nuevo Proveedor';
+      this.camposModalEntidad = [
+        { key: 'nombre', label: 'Nombre / Razón Social', tipo: 'text', requerido: true, placeholder: 'Ej: Distribuidora S.A.' },
+        { key: 'cuit', label: 'CUIT', tipo: 'text', requerido: false, placeholder: 'Ej: 30-12345678-9' },
+        { key: 'categoria', label: 'Categoría', tipo: 'text', requerido: false, placeholder: 'Ej: Materias Primas' },
+        { key: 'activo', label: '¿Activo?', tipo: 'checkbox', requerido: false }
+      ];
+    } else {
+      this.tituloModalEntidad = 'Nuevo Cliente';
+      this.camposModalEntidad = [
+        { key: 'nombre', label: 'Nombre / Razón Social', tipo: 'text', requerido: true, placeholder: 'Ej: Juan Pérez' },
+        { key: 'dniCuit', label: 'DNI / CUIT', tipo: 'text', requerido: false, placeholder: 'Ej: 20-33445566-7' },
+        { 
+          key: 'categoriaId', 
+          label: 'Categoría', 
+          tipo: 'select', 
+          requerido: true, 
+          opciones: this.categoriasCliente.map(c => ({ value: c.id, label: c.nombre })) 
+        },
+        { key: 'cuentaCorriente', label: 'Habilitar Cuenta Corriente', tipo: 'checkbox', requerido: false },
+        { key: 'activo', label: '¿Activo?', tipo: 'checkbox', requerido: false }
+      ];
+    }
+    this.modalEntidadVisible = true;
+  }
+
+  cerrarModalEntidad(): void {
+    this.modalEntidadVisible = false;
+  }
+
+  async guardarNuevaEntidad(valores: Record<string, any>): Promise<void> {
+    this.guardandoEntidad = true;
+    try {
+      if (this.tipoEntidad === 'PROVEEDORES') {
+        await this.proveedoresService.crear({
+          nombre: String(valores['nombre']).trim(),
+          cuit: valores['cuit'] ? String(valores['cuit']).trim() : undefined,
+          categoria: valores['categoria'] ? String(valores['categoria']).trim() : undefined,
+          activo: valores['activo'] ?? true
+        });
+        this.mostrarMensaje('ok', 'Proveedor creado correctamente.');
+      } else {
+        await this.clientesService.crear({
+          nombre: String(valores['nombre']).trim(),
+          dniCuit: valores['dniCuit'] ? String(valores['dniCuit']).trim() : undefined,
+          categoriaId: Number(valores['categoriaId']),
+          cuentaCorriente: !!valores['cuentaCorriente'],
+          activo: valores['activo'] ?? true
+        });
+        this.mostrarMensaje('ok', 'Cliente creado correctamente.');
+      }
+      this.cerrarModalEntidad();
+      await this.consultarEntidades();
+    } catch (e) {
+      this.mostrarMensaje('error', 'Error al guardar registro: ' + (e as Error).message);
+    } finally {
+      this.guardandoEntidad = false;
+    }
+  }
+
   private descargarCSV(nombreArchivo: string, encabezado: string[], filas: string[][]): void {
     const separador = ';';
     const csv = '\uFEFF' + [encabezado, ...filas].map((f) => f.map((v) => `"${v}"`).join(separador)).join('\n');
@@ -192,12 +405,5 @@ export class ReportesComponent implements OnInit {
     a.download = nombreArchivo;
     a.click();
     URL.revokeObjectURL(url);
-  }
-  get cmvAjustado(): number {
-    if (!this.resultado) return 0;
-    // CMV original menos el total de impuestos acumulados del período
-    const totalImpuestosPeriodo = this.resultado.totalImpuestosPeriodo ?? 0; 
-    const cmvFinal = this.resultado.cmv - totalImpuestosPeriodo;
-    return cmvFinal >= 0 ? cmvFinal : 0;
   }
 }

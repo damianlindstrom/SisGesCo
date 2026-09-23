@@ -119,7 +119,6 @@ export class ComprasComponent implements OnInit {
   public modalProductoVisible = false;
   public guardandoProducto = false;
   public camposProducto = CAMPOS_PRODUCTO;
-  
 
   constructor(
     private proveedoresService: ProveedoresService,
@@ -136,7 +135,7 @@ export class ComprasComponent implements OnInit {
         this.parametrosService.getImpuestos(),
         this.parametrosService.getFormasPago(),
       ]);
-      this.proveedores = provs;
+      this.proveedores = provs as Proveedor[];
       this.productos = prods;
       
       this.formasPago = listaFormasPago
@@ -193,11 +192,12 @@ export class ComprasComponent implements OnInit {
   async guardarProveedor(valores: Record<string, string>): Promise<void> {
     this.guardandoProveedor = true;
     try {
-      const nuevo = await this.proveedoresService.crear({
+      const nuevo = (await this.proveedoresService.crear({
         nombre: valores['nombre'],
         cuit: valores['cuit'] || undefined,
         categoria: valores['categoria'] || undefined,
-      });
+      })) as Proveedor;
+
       this.proveedores = [...this.proveedores, nuevo];
       if (this.origenModalProveedor === 'comprobante') {
         this.proveedorComp = nuevo;

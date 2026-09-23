@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { ReporteImpositivo, ResultadoPeriodo } from './models/reportes.model';
+import { MovimientoGeneral, ReporteImpositivo, ResultadoPeriodo } from './models/reportes.model';
 
 interface ApiResponse<T> {
   status: string;
@@ -40,6 +40,19 @@ export class ReportesService {
       .set('desde', desde)
       .set('hasta', hasta);
     const res = await firstValueFrom(this.http.get<ApiResponse<any>>(`${this.apiUrl}/resumen-forma-pago`, { params }));
+    return res.data;
+  }
+
+  async movimientos(desde: string, hasta: string, modulo?: string): Promise<MovimientoGeneral[]> {
+    let params = new HttpParams()
+      .set('desde', desde)
+      .set('hasta', hasta);
+
+    if (modulo && modulo !== 'TODOS') {
+      params = params.set('modulo', modulo);
+    }
+
+    const res = await firstValueFrom(this.http.get<ApiResponse<MovimientoGeneral[]>>(`${this.apiUrl}/movimientos`, { params }));
     return res.data;
   }
 }
