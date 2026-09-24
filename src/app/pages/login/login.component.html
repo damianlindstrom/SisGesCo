@@ -31,16 +31,26 @@
       </div>
 
       <div class="form-group">
-        <label for="password">Contraseña</label>
-        <input 
-          type="password" 
-          id="password" 
-          [(ngModel)]="password" 
-          name="password" 
-          placeholder="••••••••"
-          required
-        />
-      </div>
+  <label for="password">Contraseña</label>
+  <div class="password-wrapper">
+    <input 
+      [type]="mostrarPassword ? 'text' : 'password'" 
+      id="password" 
+      [(ngModel)]="password" 
+      name="password" 
+      placeholder="••••••••"
+      required
+    />
+    <button 
+      type="button" 
+      class="btn-toggle-password" 
+      (click)="toggleMostrarPassword()"
+      [title]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+    >
+      {{ mostrarPassword ? '🙈' : '👁️' }}
+    </button>
+  </div>
+</div>
 
       <div *ngIf="errorMensaje" class="error-alert">
         {{ errorMensaje }}

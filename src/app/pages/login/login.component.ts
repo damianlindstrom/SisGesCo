@@ -15,9 +15,14 @@ export class LoginComponent {
   organizacion = 'Mi Empresa';
   usuario = '';
   password = '';
+  mostrarPassword = false;
   errorMensaje = '';
 
   constructor(private authService: AuthService, private router: Router) {}
+
+  toggleMostrarPassword(): void {
+    this.mostrarPassword = !this.mostrarPassword;
+  }
 
   onSubmit(): void {
     this.errorMensaje = '';
