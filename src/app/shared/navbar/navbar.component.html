@@ -1,7 +1,8 @@
-<!-- Componente Navbar Unificado -->
-<nav class="app-navbar">
+<nav class="app-navbar" *ngIf="authService.obtenerUsuarioActual()">
   <div class="nav-brand">
-    <a routerLink="/" class="brand-link">⚙️ Sistema de Gestión</a>
+    <a routerLink="/" class="brand-link">
+      ⚙️ {{ authService.obtenerUsuarioActual()?.organizacion || 'Sistema de Gestión' }}
+    </a>
     <button type="button" class="nav-toggle" (click)="toggleMenuMobile()" aria-label="Abrir menú">
       ☰
     </button>
@@ -9,11 +10,26 @@
 
   <div class="nav-menu" [class.visible]="menuVisible">
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">🏠 Inicio</a>
-    <a routerLink="/ventas" routerLinkActive="active" class="nav-item">🛒 Ventas</a>
-    <a routerLink="/compras" routerLinkActive="active" class="nav-item">📋 Compras</a>
-    <a routerLink="/gastos-varios" routerLinkActive="active" class="nav-item">💸 Gastos Varios</a>
-    <a routerLink="/reportes" routerLinkActive="active" class="nav-item">📈 Reportes</a>
-    <a routerLink="/productos" routerLinkActive="active" class="nav-item">📦 Productos</a>
-    <a class="nav-item" routerLink="/parametros" routerLinkActive="active">⚙️ Parámetros</a>
+    
+    <a *ngIf="authService.tienePermiso(['vendedor'])" routerLink="/ventas" routerLinkActive="active" class="nav-item">🛒 Ventas</a>
+    
+    <a *ngIf="authService.tienePermiso(['administrador'])" routerLink="/compras" routerLinkActive="active" class="nav-item">📋 Compras</a>
+    
+    <a *ngIf="authService.tienePermiso(['administrador'])" routerLink="/gastos-varios" routerLinkActive="active" class="nav-item">💸 Gastos Varios</a>
+    
+    <a *ngIf="authService.tienePermiso(['vendedor', 'administrador'])" routerLink="/reportes" routerLinkActive="active" class="nav-item">📈 Reportes</a>
+    
+    <a *ngIf="authService.tienePermiso(['vendedor', 'administrador'])" routerLink="/productos" routerLinkActive="active" class="nav-item">📦 Productos</a>
+    
+    <a *ngIf="authService.tienePermiso(['dueño'])" routerLink="/parametros" routerLinkActive="active" class="nav-item">⚙️ Parámetros</a>
+
+    <div class="user-section">
+      <span class="user-badge">
+        👤 {{ authService.obtenerUsuarioActual()?.usuario }} ({{ authService.obtenerUsuarioActual()?.rol }})
+      </span>
+      <button type="button" class="btn-logout" (click)="logout()">
+        🚪 Salir
+      </button>
+    </div>
   </div>
 </nav>
