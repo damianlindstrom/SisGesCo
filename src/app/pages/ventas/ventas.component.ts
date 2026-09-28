@@ -63,6 +63,7 @@ export class VentasComponent implements OnInit {
   items: ItemVentaUI[] = [];
   formaPago = '';
   nroComprobante = '';
+  importeRecibido: number | null = null;
   
   neto = 0;
   iva = 0;
@@ -319,6 +320,7 @@ export class VentasComponent implements OnInit {
   private resetVentaFormulario(): void {
     this.items = [];
     this.formaPago = '';
+    this.importeRecibido = null;
     this.compradorSeleccionado = null;
     this.nroComprobante = '';
     this.neto = 0;
@@ -428,4 +430,20 @@ export class VentasComponent implements OnInit {
       this.guardandoCliente = false;
     }
   }
+  get esEfectivo(): boolean {
+  return this.formaPago.toLowerCase().trim() === 'efectivo';
+}
+
+get vuelto(): number {
+  if (this.esEfectivo && this.importeRecibido !== null && this.importeRecibido >= this.totalVenta) {
+    return Math.round((this.importeRecibido - this.totalVenta) * 100) / 100;
+  }
+  return 0;
+}
+
+onFormaPagoChange(): void {
+  if (!this.esEfectivo) {
+    this.importeRecibido = null;
+  }
+}
 }
